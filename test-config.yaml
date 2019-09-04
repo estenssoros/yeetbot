@@ -1,0 +1,14 @@
+url: {your-slack-gook-url}
+user_token: {your-slack-user-token}
+bot_token: {your-slack-bot-token}
+username: yeetbot
+icon: ':ghost:'
+channel: '#general'
+debug: true
+greeting: hello {{.Name}}! It's time for our daily standup meeting.
+steps:
+- text: How do you feel today?
+- text: What did you do since Yesterday?
+- text: What will you do Today?
+- text: Is anything blocking your progress?
+- text: Anything to add?
