@@ -6,12 +6,15 @@ import (
 )
 
 var (
-	slackurl = "https://slack.com/api"
-	token    = "xoxb-708948424145-745505481845-LcRoch5r9iL94t8gpH4m7dhz"
+	verbose bool
 )
 
 func init() {
-	rootCmd.AddCommand(usersCmd)
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show more text")
+	rootCmd.AddCommand(userCmd)
+	rootCmd.AddCommand(channelCmd)
+	rootCmd.AddCommand(messageCmd)
+	rootCmd.AddCommand(dmCmd)
 }
 
 var rootCmd = &cobra.Command{
