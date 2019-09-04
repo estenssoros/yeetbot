@@ -3,29 +3,38 @@ package main
 import (
 	"fmt"
 
+	"github.com/estenssoros/yeetbot/client"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	usersCmd.AddCommand(usersListCmd)
+	userCmd.AddCommand(userListCmd)
 }
 
-var usersCmd = &cobra.Command{
-	Use: "users",
+var userCmd = &cobra.Command{
+	Use: "user",
 }
 
-var usersListCmd = &cobra.Command{
+var userListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list users in a workspace",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
-		users, err := client.ListUsers()
+		c, err := client.NewAWS()
+		if err != nil {
+			return errors.Wrap(err, "client new aws")
+		}
+		users, err := c.ListUsers()
 		if err != nil {
 			return errors.Wrap(err, "client list users")
 		}
-		for _, u := range users {
-			fmt.Println(u.ID, u.Name)
+
+		for _, user := range users {
+			if verbose {
+				fmt.Println(user)
+			} else {
+				fmt.Println(user.ID, user.Name)
+			}
 		}
 		return nil
 	},
