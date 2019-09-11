@@ -4,16 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
-	"github.com/aws/aws-sdk-go/aws"
-
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/estenssoros/yeetbot/models"
 	"github.com/estenssoros/yeetbot/slack"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -24,26 +19,13 @@ var (
 	slackurl        = "https://slack.com/api"
 	defaultUsername = "yeetbot"
 	defaultIcon     = ":ghost:"
-	defaultChannel  = "#general"
 	yeetbotBucket   = "yeetbot"
 )
 
-type Config struct {
-	URL       string  `yaml:"url"`
-	UserToken string  `yaml:"user_token"`
-	BotToken  string  `yaml:"bot_token"`
-	Username  string  `yaml:"username"`
-	Icon      string  `yaml:"icon"`
-	Channel   string  `yaml:"channel"`
-	Debug     bool    `yaml:"debug"`
-	Greeting  string  `yaml:"greeting"`
-	Steps     []*Step `yaml:"steps"`
-}
-
-func ReadConfig(fileName string) (*Config, error) {
-	data, err := ioutil.ReadFile(fileName)
+func ConfigFromReader(r io.Reader) (*Config, error) {
+	data, err := ioutil.ReadAll(r)
 	if err != nil {
-		return nil, errors.Wrap(err, "readfile")
+		return nil, errors.Wrap(err, "read reader")
 	}
 	config := &Config{}
 	if err := yaml.Unmarshal(data, config); err != nil {
@@ -53,77 +35,15 @@ func ReadConfig(fileName string) (*Config, error) {
 }
 
 type Client struct {
-	URL       string       `json:"url"`
-	UserToken string       `json:"user_token"`
-	BotToken  string       `json:"bot_token"`
-	Username  string       `json:"username"`
-	Icon      string       `json:"icon"`
-	Channel   string       `json:"channel"`
-	Debug     bool         `json:"debug"`
-	Greeting  string       `json:"greeting"`
-	Steps     []*Step      `json:"steps"`
-	Team      *models.Team `json:"team"`
+	UserToken string `json:"user_token"`
+	BotToken  string `json:"bot_token"`
+	Debug     bool   `json:"debug"`
+	*Report
 }
 
 func (c Client) String() string {
 	ju, _ := json.MarshalIndent(c, "", " ")
 	return string(ju)
-}
-
-func ClientFromConfig(fileName string) (*Client, error) {
-	config, err := ReadConfig(fileName)
-	if err != nil {
-		return nil, errors.Wrap(err, "read config")
-	}
-	return New(config), nil
-}
-
-func (c *Client) AddTeamFromFile(fileName string) error {
-	d, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return errors.Wrap(err, "readfile")
-	}
-	team := &models.Team{}
-	if err := yaml.Unmarshal(d, team); err != nil {
-		return errors.Wrap(err, "yaml unmarshal")
-	}
-	c.Team = team
-	return nil
-}
-
-func New(config *Config) *Client {
-	return &Client{
-		URL:       config.URL,
-		UserToken: config.UserToken,
-		BotToken:  config.BotToken,
-		Username:  config.Username,
-		Icon:      config.Icon,
-		Channel:   config.Channel,
-		Debug:     config.Debug,
-		Greeting:  config.Greeting,
-		Steps:     config.Steps,
-	}
-}
-
-func NewAWS() (*Client, error) {
-	sess, err := session.NewSession(aws.NewConfig().WithRegion("us-west-2"))
-	if err != nil {
-		return nil, errors.Wrap(err, "session new")
-	}
-	downloader := s3manager.NewDownloader(sess)
-	buff := &aws.WriteAtBuffer{}
-	_, err = downloader.Download(buff, &s3.GetObjectInput{
-		Bucket: &yeetbotBucket,
-		Key:    aws.String("config/config.yaml"),
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "download")
-	}
-	config := &Config{}
-	if err := yaml.Unmarshal(buff.Bytes(), config); err != nil {
-		return nil, errors.Wrap(err, "yaml unmarshal")
-	}
-	return New(config), nil
 }
 
 func (c *Client) applyMessageDefaults(msg *slack.Message) {
@@ -134,7 +54,7 @@ func (c *Client) applyMessageDefaults(msg *slack.Message) {
 		msg.Icon = defaultIcon
 	}
 	if msg.Channel == "" {
-		msg.Channel = defaultChannel
+		msg.Channel = c.Channel
 	}
 }
 
@@ -197,7 +117,7 @@ func (c *Client) postRequest(url string, v interface{}) error {
 	return nil
 }
 
-func (c *Client) GenericMessage(u *models.User, text string) error {
+func (c *Client) GenericMessage(u *User, text string) error {
 	msg := &slack.Message{
 		Text:    text,
 		Channel: "@" + u.Name,
@@ -206,14 +126,14 @@ func (c *Client) GenericMessage(u *models.User, text string) error {
 	return errors.Wrap(c.SendMessage(msg), "client send message")
 }
 
-func (c *Client) SendGreeting(user *models.User) error {
+func (c *Client) SendGreeting(user *slack.User) error {
 	if c.BotToken == "" {
 		return errors.New("missing bot token")
 	}
 	if c.UserToken == "" {
 		return errors.New("missing user token")
 	}
-	text, err := user.Template(c.Greeting)
+	text, err := user.Template(c.IntroMessage)
 	if err != nil {
 		return errors.Wrap(err, "user template")
 	}
@@ -258,11 +178,8 @@ func (c *Client) SendGreeting(user *models.User) error {
 	return nil
 }
 
-func (c *Client) Run(u *models.User) error {
-	if c.Team == nil {
-		return errors.New("no team configured")
-	}
-	for i, s := range c.Steps {
+func (c *Client) Run(u *User) error {
+	for i, s := range c.Questions {
 		if err := c.GenericMessage(u, s.Text); err != nil {
 			return errors.Wrapf(err, "generic message step: %d", i)
 		}
@@ -271,11 +188,11 @@ func (c *Client) Run(u *models.User) error {
 }
 
 type listUsersResponse struct {
-	OK      bool           `json:"ok"`
-	Members []*models.User `json:"members"`
+	OK      bool          `json:"ok"`
+	Members []*slack.User `json:"members"`
 }
 
-func (c *Client) ListUsers() ([]*models.User, error) {
+func (c *Client) ListUsers() ([]*slack.User, error) {
 	data, err := newAPIRequest(slack.UsersList).
 		addParam("token", c.BotToken).
 		Get()
@@ -308,7 +225,7 @@ func (c *Client) ListChannels() ([]*slack.Channel, error) {
 	return resp.Channels, nil
 }
 
-func (c *Client) GetUserFromRequest(req *models.EventRequest) (*models.User, error) {
+func (c *Client) GetUserFromRequest(req *slack.EventRequest) (*slack.User, error) {
 	users, err := c.ListUsers()
 	if err != nil {
 		return nil, errors.Wrap(err, "client list users")
@@ -332,7 +249,7 @@ func (c *Client) ListConversations() (interface{}, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (c *Client) GetLastMessageFromUser(user *models.User) (*slack.Message, error) {
+func (c *Client) GetLastMessageFromUser(user *User) (*slack.Message, error) {
 	conversations, err := c.ListConversations()
 	if err != nil {
 		return nil, errors.Wrap(err, "client list conversations")
