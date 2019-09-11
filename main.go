@@ -31,5 +31,7 @@ func main() {
 	for _, r := range engine.Routes() {
 		fmt.Println(r.Method, r.Path, r.Name)
 	}
+	// TODO: YEET_CONFIG environment variable
+	// TODO: attach config and map[user]Report to context
 	engine.Start(":3000")
 }
