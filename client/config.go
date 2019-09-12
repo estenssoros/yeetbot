@@ -61,19 +61,3 @@ func ConfigFromEnv() (*Config, error) {
 	defer f.Close()
 	return ConfigFromReader(f)
 }
-
-// UserMap loops through all reports and users to create a user map to reports
-func (c *Config) UserMap() *UserMap {
-	userMap := UserMap(map[string][]*Report{})
-	for _, report := range c.Reports {
-		for _, u := range report.Users {
-			if reports, ok := userMap[u.Name]; !ok {
-				userMap[u.Name] = []*Report{report}
-			} else {
-				reports = append(reports, report)
-				userMap[u.Name] = reports
-			}
-		}
-	}
-	return &userMap
-}
