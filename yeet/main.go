@@ -15,6 +15,7 @@ func init() {
 	rootCmd.AddCommand(channelCmd)
 	rootCmd.AddCommand(messageCmd)
 	rootCmd.AddCommand(dmCmd)
+	rootCmd.AddCommand(elasticCmd)
 }
 
 var rootCmd = &cobra.Command{

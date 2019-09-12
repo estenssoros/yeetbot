@@ -22,10 +22,11 @@ var channelListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list channels",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, err := client.NewAWS()
+		config, err := client.ConfigFromEnv()
 		if err != nil {
-			return errors.Wrap(err, "new aws")
+			return errors.Wrap(err, "client config from env")
 		}
+		c := config.NewClient(config.Reports[0])
 		channels, err := c.ListChannels()
 		if err != nil {
 			return errors.Wrap(err, "client list channels")
@@ -47,10 +48,11 @@ var channelPurgeCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, err := client.NewAWS()
+		config, err := client.ConfigFromEnv()
 		if err != nil {
-			return errors.Wrap(err, "client new aws")
+			return errors.Wrap(err, "client config from env")
 		}
+		c := config.NewClient(config.Reports[0])
 		messages, err := c.ListMessages(args[0])
 		if err != nil {
 			return errors.Wrap(err, "client list messages")
