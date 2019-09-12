@@ -1,6 +1,8 @@
 package client
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type Config struct {
 	UserToken string    `json:"user_token"`
