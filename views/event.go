@@ -31,11 +31,8 @@ func EventHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	client.Report = report
-	// user := req.Event.User
-	// eventTime := req.EventTime
-	// cc.U
 	fmt.Println(client.Report)
-	// TODO: figure out user, find report, find messages since report, what message step are we on record response
+	// TODO: find messages since report, what message step are we on record response
 
 	// client, err := client.NewFromReader()
 	// if err != nil {

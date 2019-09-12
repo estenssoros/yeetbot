@@ -1,14 +1,11 @@
 package client
 
 import (
-	"io/ioutil"
 	"log"
-	"os"
 	"time"
 
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 )
 
 // Context wrapper around echo's context
@@ -20,28 +17,18 @@ type Context struct {
 
 // Middleware to wrap echo's context with Context
 func Middleware(next echo.HandlerFunc) echo.HandlerFunc {
-	filepath := os.Getenv("YEET_CONFIG")
-	if filepath == "" {
-		filepath = "./config.yml"
+	config, err := ConfigFromEnv()
+	if err != nil {
+		log.Fatalf("Failed to load config: %s", err.Error())
 	}
 	return func(c echo.Context) error {
-		cc := &Context{Context: c, UserReports: map[string][]*Report{}}
-		cc.readFile(filepath)
+		cc := &Context{Context: c, Config: config, UserReports: map[string][]*Report{}}
 		cc.populateUserReports()
 		return next(cc)
 	}
 }
 
-func (c *Context) readFile(filepath string) {
-	bytes, err := ioutil.ReadFile(filepath)
-	if err != nil {
-		log.Fatal("Failed to parse config")
-	}
-	config := &Config{}
-	yaml.Unmarshal(bytes, config)
-	c.Config = config
-}
-
+// FindUserReport selects closest previous report to current time
 func (c *Context) FindUserReport(username string) (*Report, error) {
 	closestTime := struct {
 		index int
