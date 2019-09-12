@@ -7,10 +7,9 @@ import (
 
 	"github.com/estenssoros/yeetbot/client"
 	"github.com/estenssoros/yeetbot/slack"
-	"github.com/labstack/echo"
 )
 
-func EventHandler(c echo.Context) error {
+func EventHandler(c client.Context) error {
 	req := &slack.EventRequest{}
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -18,14 +17,13 @@ func EventHandler(c echo.Context) error {
 	if req.Challenge != "" {
 		return c.JSON(http.StatusOK, req.Challenge)
 	}
-	cc := c.(*client.Context)
-	client := cc.Config.NewClient(&client.Report{})
+	client := c.Config.NewClient(&client.Report{})
 	user, err := client.GetUserFromRequest(req)
 	if err != nil {
 		log.Println(err)
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	report, err := cc.FindUserReport(user.RealName)
+	report, err := c.FindUserReport(user.RealName)
 	if err != nil {
 		log.Println(err)
 		return c.JSON(http.StatusInternalServerError, err)
