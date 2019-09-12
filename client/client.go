@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -12,7 +11,6 @@ import (
 	"github.com/estenssoros/yeetbot/slack"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -22,18 +20,7 @@ var (
 	yeetbotBucket   = "yeetbot"
 )
 
-func ConfigFromReader(r io.Reader) (*Config, error) {
-	data, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, errors.Wrap(err, "read reader")
-	}
-	config := &Config{}
-	if err := yaml.Unmarshal(data, config); err != nil {
-		return nil, errors.Wrap(err, "yaml unmarshal")
-	}
-	return config, nil
-}
-
+// Client the guy that does all the work
 type Client struct {
 	UserToken string `json:"user_token"`
 	BotToken  string `json:"bot_token"`
@@ -58,6 +45,7 @@ func (c *Client) applyMessageDefaults(msg *slack.Message) {
 	}
 }
 
+// SendMessage sends a slack message
 func (c *Client) SendMessage(msg *slack.Message) error {
 	c.applyMessageDefaults(msg)
 	u, err := url.Parse(slackurl + "/" + slack.ChatPostMessage)
@@ -117,6 +105,7 @@ func (c *Client) postRequest(url string, v interface{}) error {
 	return nil
 }
 
+// GenericMessage sends a generic message
 func (c *Client) GenericMessage(u *User, text string) error {
 	msg := &slack.Message{
 		Text:    text,
@@ -126,6 +115,7 @@ func (c *Client) GenericMessage(u *User, text string) error {
 	return errors.Wrap(c.SendMessage(msg), "client send message")
 }
 
+// SendGreeting crafts and sends the greeting message
 func (c *Client) SendGreeting(user *slack.User) error {
 	if c.BotToken == "" {
 		return errors.New("missing bot token")
@@ -178,6 +168,7 @@ func (c *Client) SendGreeting(user *slack.User) error {
 	return nil
 }
 
+// Run runs the questions shotgun style
 func (c *Client) Run(u *User) error {
 	for i, s := range c.Questions {
 		if err := c.GenericMessage(u, s.Text); err != nil {
@@ -192,6 +183,7 @@ type listUsersResponse struct {
 	Members []*slack.User `json:"members"`
 }
 
+// ListUsers list users in workspace
 func (c *Client) ListUsers() ([]*slack.User, error) {
 	data, err := newAPIRequest(slack.UsersList).
 		addParam("token", c.BotToken).
@@ -211,6 +203,7 @@ type listChannelResponse struct {
 	Channels []*slack.Channel `json:"channels"`
 }
 
+// ListChannels list channels in workspace
 func (c *Client) ListChannels() ([]*slack.Channel, error) {
 	data, err := newAPIRequest(slack.ChannelsList).
 		addParam("token", c.BotToken).
@@ -225,6 +218,7 @@ func (c *Client) ListChannels() ([]*slack.Channel, error) {
 	return resp.Channels, nil
 }
 
+// GetUserFromRequest gets a user froma request user id
 func (c *Client) GetUserFromRequest(req *slack.EventRequest) (*slack.User, error) {
 	users, err := c.ListUsers()
 	if err != nil {
@@ -238,6 +232,8 @@ func (c *Client) GetUserFromRequest(req *slack.EventRequest) (*slack.User, error
 	return nil, errors.Errorf("could not locate user %s", req.Event.User)
 }
 
+// ListConversations lists conversations
+// TODO implement interface to struct (returns an interface)
 func (c *Client) ListConversations() (interface{}, error) {
 	data, err := newAPIRequest(slack.ConversationsList).
 		addParam("token", c.BotToken).
@@ -249,6 +245,9 @@ func (c *Client) ListConversations() (interface{}, error) {
 	return nil, errors.New("not implemented")
 }
 
+// GetLastMessageFromUser gets the last message from a user
+// TODO finish implementing
+// TODO should do some sort of limit on list conversations (limit 1)
 func (c *Client) GetLastMessageFromUser(user *User) (*slack.Message, error) {
 	conversations, err := c.ListConversations()
 	if err != nil {
@@ -266,6 +265,7 @@ type listMessagesResponse struct {
 	PinCount int                     `json:"pin_count"`
 }
 
+// ListMessages lists messages in channel
 func (c *Client) ListMessages(channelID string) ([]*slack.HistoryMessage, error) {
 	data, err := newAPIRequest(slack.ConversationHistory).
 		addParam("token", c.BotToken).
@@ -290,6 +290,7 @@ type listDirectMessageChannelsReponse struct {
 	Channels []*slack.Channel `json:"ims"`
 }
 
+// ListDirectMessageChannels lists direct message channels
 func (c *Client) ListDirectMessageChannels() ([]*slack.Channel, error) {
 	data, err := newAPIRequest(slack.IMList).
 		addParam("token", c.BotToken).
@@ -312,6 +313,7 @@ type deleteMessageResponse struct {
 	Error string `json:"error"`
 }
 
+// DeleteUserMessage delets a user message
 func (c *Client) DeleteUserMessage(channelID string, messageTS string) error {
 	data, err := newAPIRequest(slack.ChatDelete).
 		addParam("channel", channelID).
@@ -330,6 +332,8 @@ func (c *Client) DeleteUserMessage(channelID string, messageTS string) error {
 	}
 	return nil
 }
+
+// DeleteBotMessage deletes a bot message
 func (c *Client) DeleteBotMessage(channelID string, messageTS string) error {
 	data, err := newAPIRequest(slack.ChatDelete).
 		addParam("channel", channelID).
