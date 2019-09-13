@@ -23,9 +23,10 @@ var (
 
 // Client the guy that does all the work
 type Client struct {
-	UserToken string `json:"user_token"`
-	BotToken  string `json:"bot_token"`
-	Debug     bool   `json:"debug"`
+	UserToken string    `json:"user_token"`
+	BotToken  string    `json:"bot_token"`
+	Debug     bool      `json:"debug"`
+	Response  *Response `json:"response"`
 	*Report
 }
 

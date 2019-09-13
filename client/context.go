@@ -2,10 +2,8 @@ package client
 
 import (
 	"log"
-	"time"
 
 	"github.com/labstack/echo"
-	"github.com/pkg/errors"
 )
 
 // Context wrapper around echo's context
@@ -26,29 +24,6 @@ func Middleware(next echo.HandlerFunc) echo.HandlerFunc {
 		cc.populateUserReports()
 		return next(cc)
 	}
-}
-
-// FindUserReport selects closest previous report to current time
-func (c *Context) FindUserReport(username string) (*Report, error) {
-	closestTime := struct {
-		index int
-		time  int64
-	}{}
-	now := time.Now().Unix()
-	if len(c.UserReports[username]) == 0 {
-		return nil, errors.New("No reports found")
-	}
-	for i, report := range c.UserReports[username] {
-		t, err := time.Parse(time.Kitchen, report.Schedule.Time)
-		if err != nil {
-			return nil, err
-		}
-		if t.Unix() < now && t.Unix() > closestTime.time {
-			closestTime.index = i
-			closestTime.time = t.Unix()
-		}
-	}
-	return c.UserReports[username][closestTime.index], nil
 }
 
 func (c *Context) populateUserReports() {

@@ -1,7 +1,6 @@
 package views
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -9,52 +8,55 @@ import (
 	"github.com/estenssoros/yeetbot/slack"
 )
 
-func EventHandler(c client.Context) error {
+func EventHandler(cc client.Context) error {
 	req := &slack.EventRequest{}
-	if err := c.Bind(req); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+	if err := cc.Bind(req); err != nil {
+		return cc.JSON(http.StatusBadRequest, err)
 	}
 	if req.Challenge != "" {
-		return c.JSON(http.StatusOK, req.Challenge)
+		return cc.JSON(http.StatusOK, req.Challenge)
 	}
-	client := c.Config.NewClient(&client.Report{})
-	user, err := client.GetUserFromRequest(req)
+	c := cc.Config.NewClient(&client.Report{})
+	user, err := c.GetUserFromRequest(req)
 	if err != nil {
 		log.Println(err)
-		return c.JSON(http.StatusInternalServerError, err)
+		return cc.JSON(http.StatusInternalServerError, err)
 	}
-	report, err := c.FindUserReport(user.RealName)
+	report, err := client.FindReportByUser(user, cc.UserReports)
 	if err != nil {
 		log.Println(err)
-		return c.JSON(http.StatusInternalServerError, err)
+		return cc.JSON(http.StatusInternalServerError, err)
 	}
-	client.Report = report
-	fmt.Println(client.Report)
-	// TODO: find messages since report, what message step are we on record response
+	c.Report = report
+	response, err := c.GetUserResponse(user)
+	if err != nil {
+		log.Println(err)
+		return cc.JSON(http.StatusInternalServerError, err)
+	}
+	if response == nil {
+		err := c.PostFirstQuestion(user)
+		if err != nil {
+			log.Println(err)
+			return cc.JSON(http.StatusInternalServerError, err)
+		}
+		cc.JSON(http.StatusOK, req.Challenge)
+	}
+	c.Response = response
+	total, err := c.RecordResponse(user, req.Event.Text)
+	if err != nil {
+		log.Println(err)
+		return cc.JSON(http.StatusInternalServerError, err)
+	}
+	if total == len(c.Report.Questions) {
+		err := c.PostNextQuestion(user)
+		if err != nil {
+			log.Println(err)
+			return cc.JSON(http.StatusInternalServerError, err)
+		}
+		cc.JSON(http.StatusOK, req.Challenge)
+	}
+	c.CompleteResponse(user)
+	// send complete message to report channel
 
-	// client, err := client.NewFromReader()
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return c.JSON(http.StatusInternalServerError, err)
-	// }
-	// messages, err := client.ListMessages(req.Event.Channel)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return c.JSON(http.StatusInternalServerError, err)
-	// }
-	// fmt.Println(messages)
-	// user, err := client.GetUserFromRequest(req)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return c.JSON(http.StatusInternalServerError, err)
-	// }
-	// lastMsg, err := client.GetLastMessageFromUser(user)
-	// if err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, err)
-	// }
-	// fmt.Println(lastMsg)
-	// if err := client.UpdateUserFlow(user, lastMsg, req); err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, err)
-	// }
-	return c.JSON(http.StatusOK, req.Challenge)
+	return cc.JSON(http.StatusOK, req.Challenge)
 }
