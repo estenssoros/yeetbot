@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -18,6 +19,7 @@ var (
 type Config struct {
 	UserToken string    `json:"user_token"`
 	BotToken  string    `json:"bot_token"`
+	Debug     bool      `json:"debug"`
 	Reports   []*Report `json:"reports"`
 }
 
@@ -31,6 +33,7 @@ func (c *Config) NewClient(report *Report) *Client {
 	return &Client{
 		UserToken: c.UserToken,
 		BotToken:  c.BotToken,
+		Debug:     c.Debug,
 		Report:    report,
 	}
 }
@@ -59,5 +62,6 @@ func ConfigFromEnv() (*Config, error) {
 		return nil, errors.Wrap(err, "open file")
 	}
 	defer f.Close()
+	logrus.Infof("using config stored at: %s", path)
 	return ConfigFromReader(f)
 }

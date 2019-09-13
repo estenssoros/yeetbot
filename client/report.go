@@ -21,7 +21,6 @@ func (r Report) String() string {
 }
 
 // TodayTime return the schedule report time for today
-// TODO how do we do this for individual users? Report probably shouldn't even have a TodayTime
 func (r *Report) TodayTime() (time.Time, error) {
 	return r.Schedule.TodayTime()
 }

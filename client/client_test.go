@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestReadConfig(t *testing.T) {
@@ -37,6 +38,67 @@ func TestReportTodayTime(t *testing.T) {
 	fmt.Println(r.TodayTime())
 }
 
-// TODO write a test for multiple reports and getting latest, etc...
-// TODO how do we make sure that whatever this deploys to has the timezone database?
-// TODO i'm not sure how to check a users local time. maybe a func (u *User) ReportTime(report) that looks at the reports schedule?
+func TestClientListUsers(t *testing.T) {
+	config, err := ConfigFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := config.NewClient(config.Reports[0])
+	users, err := client.ListUsers()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(users) == 0 {
+		t.Fatal("no users returned")
+	}
+}
+
+func TestClientGetUser(t *testing.T) {
+	config, err := ConfigFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := config.NewClient(config.Reports[0])
+	userByName, err := client.GetUserByName("sebastian")
+	if err != nil {
+		t.Fatal(err)
+	}
+	userByID, err := client.GetUserByID(userByName.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if userByName.Name != userByID.Name {
+		t.Fatal("user names don't match")
+	}
+	if userByID.ID != userByName.ID {
+		t.Fatal("user ids don't match")
+	}
+}
+
+func TestClientGetuserReportTime(t *testing.T) {
+	config, err := ConfigFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := config.NewClient(config.Reports[0])
+	user, err := client.GetUserByName("sebastian")
+	if err != nil {
+		t.Fatal(err)
+	}
+	userTime, err := client.UserReportTime(user)
+	if err != nil {
+		t.Fatal(err)
+	}
+	todayTime, err := client.TodayTime()
+	if err != nil {
+		t.Fatal(err)
+	}
+	loc, err := time.LoadLocation("America/Denver")
+	if err != nil {
+		t.Fatal(err)
+	}
+	todayTime = todayTime.In(loc)
+	if want, have := todayTime.Format("15:04"), userTime.Format("15:04"); want != have {
+		t.Fatalf("have: %v, want: %v", have, want)
+	}
+}

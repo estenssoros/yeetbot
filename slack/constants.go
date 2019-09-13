@@ -8,4 +8,5 @@ var (
 	ChatDelete          = "chat.delete"
 	ChannelsList        = "channels.list"
 	IMList              = "im.list"
+	UsersInfo           = "users.info"
 )
