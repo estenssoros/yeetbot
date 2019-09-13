@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/estenssoros/yeetbot/slack"
 	"github.com/pkg/errors"
@@ -181,6 +182,7 @@ func (c *Client) Run(u *User) error {
 type listUsersResponse struct {
 	OK      bool          `json:"ok"`
 	Members []*slack.User `json:"members"`
+	Error   string        `json:"error"`
 }
 
 // ListUsers list users in workspace
@@ -194,6 +196,9 @@ func (c *Client) ListUsers() ([]*slack.User, error) {
 	listResponse := &listUsersResponse{}
 	if err := json.Unmarshal(data, &listResponse); err != nil {
 		return nil, errors.Wrap(err, "unmarshal request: %s")
+	}
+	if !listResponse.OK {
+		return nil, errors.New(listResponse.Error)
 	}
 	return listResponse.Members, nil
 }
@@ -233,7 +238,6 @@ func (c *Client) GetUserFromRequest(req *slack.EventRequest) (*slack.User, error
 }
 
 // ListConversations lists conversations
-// TODO implement interface to struct (returns an interface)
 func (c *Client) ListConversations() (interface{}, error) {
 	data, err := newAPIRequest(slack.ConversationsList).
 		addParam("token", c.BotToken).
@@ -245,9 +249,7 @@ func (c *Client) ListConversations() (interface{}, error) {
 	return nil, errors.New("not implemented")
 }
 
-// GetLastMessageFromUser gets the last message from a user
-// TODO finish implementing
-// TODO should do some sort of limit on list conversations (limit 1)
+// GetLastMessageFromUser gets the last message from a users
 func (c *Client) GetLastMessageFromUser(user *User) (*slack.Message, error) {
 	conversations, err := c.ListConversations()
 	if err != nil {
@@ -351,4 +353,59 @@ func (c *Client) DeleteBotMessage(channelID string, messageTS string) error {
 		return errors.New(resp.Error)
 	}
 	return nil
+}
+
+// GetUserByName lists slack users and then returns the user
+func (c *Client) GetUserByName(userName string) (*slack.User, error) {
+	users, err := c.ListUsers()
+	if err != nil {
+		return nil, errors.Wrap(err, "client list users")
+	}
+	for _, u := range users {
+		if u.Name == userName {
+			return u, nil
+		}
+	}
+	return nil, errors.New("could not locate user")
+}
+
+type userInfoResponse struct {
+	OK    bool        `json:"ok"`
+	Error string      `json:"error"`
+	User  *slack.User `json:"user"`
+}
+
+func (c *Client) GetUserByID(userID string) (*slack.User, error) {
+	data, err := newAPIRequest(slack.UsersInfo).
+		addParam("user", userID).
+		addParam("include_local", "true").
+		addParam("token", c.BotToken).
+		Get()
+	if err != nil {
+		return nil, errors.Wrap(err, "api request")
+	}
+	resp := &userInfoResponse{}
+	if err := json.Unmarshal(data, resp); err != nil {
+		return nil, errors.Wrap(err, "unmarshal")
+	}
+	if !resp.OK {
+		return nil, errors.New(resp.Error)
+	}
+	return resp.User, nil
+}
+
+func (c *Client) UserReportTime(u *slack.User) (time.Time, error) {
+	if !c.HasUser(u) {
+		return time.Time{}, errors.New("missing user")
+	}
+	if c.Schedule.TimeZone == userTimeZone {
+		if c.Debug {
+			logrus.Info("using user timezone")
+		}
+		return c.Schedule.UserTimeZone(u)
+	}
+	if c.Debug {
+		logrus.Info("using report utc time")
+	}
+	return c.Schedule.TodayTime()
 }

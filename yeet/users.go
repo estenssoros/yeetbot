@@ -20,10 +20,11 @@ var userListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list users in a workspace",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, err := client.NewAWS()
+		config, err := client.ConfigFromEnv()
 		if err != nil {
-			return errors.Wrap(err, "client new aws")
+			return errors.Wrap(err, "client config from env")
 		}
+		c := config.NewClient(config.Reports[0])
 		users, err := c.ListUsers()
 		if err != nil {
 			return errors.Wrap(err, "client list users")

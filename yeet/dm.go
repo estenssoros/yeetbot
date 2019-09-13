@@ -21,10 +21,11 @@ var dmListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list direct messages",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, err := client.NewAWS()
+		config, err := client.ConfigFromEnv()
 		if err != nil {
-			return errors.Wrap(err, "client new aws")
+			return errors.Wrap(err, "client config from env")
 		}
+		c := config.NewClient(config.Reports[0])
 		channels, err := c.ListDirectMessageChannels()
 		if err != nil {
 			return errors.Wrap(err, "client list direct messages")

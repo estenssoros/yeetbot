@@ -28,6 +28,11 @@ type User struct {
 	Locale            string  `json:"locale"`
 }
 
+func (u User) String() string {
+	ju, _ := json.MarshalIndent(u, "", " ")
+	return string(ju)
+}
+
 type Profile struct {
 	FirstName             string `json:"first_name"`
 	LastName              string `json:"last_name"`
