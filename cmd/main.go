@@ -16,7 +16,7 @@ func init() {
 }
 
 func init() {
-	rootCmd.AddCommand(cmd.ElasticCmd)
+	rootCmd.AddCommand(ElasticCmd)
 }
 
 var rootCmd = &cobra.Command{
