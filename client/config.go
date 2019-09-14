@@ -17,11 +17,10 @@ var (
 
 // Config all info for a yeetbot config
 type Config struct {
-	UserToken  string    `json:"user_token"`
-	BotToken   string    `json:"bot_token"`
-	ElasticURL string    `json:"elastic_url"`
-	Debug      bool      `json:"debug"`
-	Reports    []*Report `json:"reports"`
+	UserToken string    `json:"user_token"`
+	BotToken  string    `json:"bot_token"`
+	Debug     bool      `json:"debug"`
+	Reports   []*Report `json:"reports"`
 }
 
 func (c Config) String() string {
