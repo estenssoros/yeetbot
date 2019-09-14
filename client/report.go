@@ -39,7 +39,7 @@ func (c *Client) FindReportByUser(user *slack.User, userReports map[string][]*Re
 		return nil, errors.New("No reports found")
 	}
 	for i, report := range userReports[user.RealName] {
-		t, err := time.Parse(time.Kitchen, report.Schedule.Time)
+		t, err := time.Parse("15:04", report.Schedule.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +51,7 @@ func (c *Client) FindReportByUser(user *slack.User, userReports map[string][]*Re
 	return userReports[user.RealName][closestTime.index], nil
 }
 
-// InitiateReport intiates a new report for a user
+// InitiateReport initiates a new report for a user
 func (c *Client) InitiateReport(user *slack.User) error {
 	// TODO this
 	return nil

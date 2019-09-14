@@ -60,13 +60,40 @@ func EventHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	msgIdx, err := getMessageIndexByTS(messages, req.Event.Ts)
+
+	// msgIdx, err := getMessageIndexByTS(messages, req.Event.Ts)
+  
+	// did user ask for report shortcut
+	started, err := cli.HasUserStartedReport(user)
+	if err != nil {
+		logrus.Error(err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	if req.Event.Text == "report" && !started {
+		if err := cli.InitiateReport(user); err != nil {
+			return c.JSON(http.StatusInternalServerError, errors.Wrap(err, "client initiate report"))
+		}
+		return c.NoContent(http.StatusOK)
+	}
+
+	// what stage is this user at?
+	question, err := cli.GetRecentQuestion(user)
+
 	if err != nil {
 		logrus.Error(err)
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	question, err := getMessageByUserID(message[msgIdx:], cli.YeetUser)
+
+	//question, err := getMessageByUserID(message[msgIdx:], cli.YeetUser)
+
+	// record a response for a step OR overwrite a response from a previous stage
+	err = cli.RecordResponse(&client.RecordResponseInput{
+		Question: question,
+		User:     user,
+		Text:     req.Event.Text,
+	})
+
 	if err != nil {
 		logrus.Error(err)
 		return c.JSON(http.StatusInternalServerError, err)

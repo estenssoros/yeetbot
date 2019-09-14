@@ -6,13 +6,15 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/estenssoros/yeetbot/slack"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
 var (
-	yeetENV = "YEETBOT_CONFIG"
+	yeetENV      = "YEETBOT_CONFIG"
+	elasticIndex = "yeetbot"
 )
 
 // Config all info for a yeetbot config
@@ -22,6 +24,8 @@ type Config struct {
 	YeetUser  string    `json::""yeet_userid`
 	Debug     bool      `json:"debug"`
 	Reports   []*Report `json:"reports"`
+
+	ElasticURL string    `json:"elastic_url"`
 }
 
 func (c Config) String() string {
@@ -31,13 +35,20 @@ func (c Config) String() string {
 
 // NewClient creates a report client from a config
 func (c *Config) NewClient(report *Report) *Client {
-	return &Client{
-		UserToken: c.UserToken,
+
+	client := &Client{
+    UserToken: c.UserToken,
 		BotToken:  c.BotToken,
-		Debug:     c.Debug,
+    Debug:     c.Debug,
 		YeetUser:  c.YeetUser,
-		Report:    report,
+		ElasticIndex: elasticIndex,
+		UserReports:  map[string][]*Report{},
+		UserMap:      map[string]*slack.User{},
+		Config:       c,
+		Report:       report,
 	}
+	client.PopulateUserReports()
+	return client
 }
 
 // ConfigFromReader creates a config from a reader
