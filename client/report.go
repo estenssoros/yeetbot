@@ -29,7 +29,7 @@ func (r *Report) TodayTime() (time.Time, error) {
 }
 
 // FindUserReport selects closest previous report to current time
-func FindReportByUser(user *slack.User, userReports map[string][]*Report) (*Report, error) {
+func (c *Client) FindReportByUser(user *slack.User, userReports map[string][]*Report) (*Report, error) {
 	closestTime := struct {
 		index int
 		time  int64
