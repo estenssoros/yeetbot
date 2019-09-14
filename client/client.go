@@ -23,11 +23,17 @@ var (
 
 // Client the guy that does all the work
 type Client struct {
-	UserToken string    `json:"user_token"`
-	BotToken  string    `json:"bot_token"`
-	Debug     bool      `json:"debug"`
-	Response  *Response `json:"response"`
-	*Report
+	UserToken      string    `json:"user_token"`
+	BotToken       string    `json:"bot_token"`
+	YeetUser       string    `json:"yeet_user"`
+	Debug          bool      `json:"debug"`
+	Response       *Response `json:"response"`
+	Reports        []*Report
+	selectedReport int
+}
+
+func (c *Client) SelectedReport() *Report {
+	return c.Reports[c.selectedReport]
 }
 
 func (c Client) String() string {
@@ -43,7 +49,7 @@ func (c *Client) applyMessageDefaults(msg *slack.Message) {
 		msg.Icon = defaultIcon
 	}
 	if msg.Channel == "" {
-		msg.Channel = c.Channel
+		msg.Channel = c.SelectedReport().Channel
 	}
 }
 
@@ -125,7 +131,7 @@ func (c *Client) SendGreeting(user *slack.User) error {
 	if c.UserToken == "" {
 		return errors.New("missing user token")
 	}
-	text, err := user.Template(c.IntroMessage)
+	text, err := user.Template(c.SelectedReport().IntroMessage)
 	if err != nil {
 		return errors.Wrap(err, "user template")
 	}
@@ -172,7 +178,7 @@ func (c *Client) SendGreeting(user *slack.User) error {
 
 // Run runs the questions shotgun style
 func (c *Client) Run(u *User) error {
-	for i, s := range c.Questions {
+	for i, s := range c.SelectedReport().Questions {
 		if err := c.GenericMessage(u, s.Text); err != nil {
 			return errors.Wrapf(err, "generic message step: %d", i)
 		}
@@ -273,6 +279,28 @@ func (c *Client) ListMessages(channelID string) ([]*slack.HistoryMessage, error)
 	return resp.Messages, nil
 }
 
+// ListTodayMessages lists messages from today
+func (c *Client) ListTodayMessages(channelID string) ([]*slack.HistoryMessage, error) {
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	data, err := newAPIRequest(slack.ConversationHistory).
+		addParam("token", c.BotToken).
+		addParam("channel", channelID).
+		addParam("oldest", fmt.Sprint(today.Unix())).
+		Get()
+	if err != nil {
+		return nil, errors.Wrap(err, "api requests")
+	}
+	resp := &listMessagesResponse{}
+	if err := json.Unmarshal(data, resp); err != nil {
+		return nil, errors.Wrap(err, "unmarshal")
+	}
+	if !resp.OK {
+		return nil, errors.New(resp.Error)
+	}
+	return resp.Messages, nil
+}
+
 type listDirectMessageChannelsReponse struct {
 	OK       bool             `json:"ok"`
 	Error    string           `json:"error"`
@@ -294,6 +322,7 @@ func (c *Client) ListDirectMessageChannels() ([]*slack.Channel, error) {
 	if !resp.OK {
 		return nil, errors.New(resp.Error)
 	}
+	fmt.Println(string(data))
 	return resp.Channels, nil
 }
 
@@ -387,14 +416,14 @@ func (c *Client) UserReportTime(u *slack.User) (time.Time, error) {
 	if !c.HasUser(u) {
 		return time.Time{}, errors.New("missing user")
 	}
-	if c.Schedule.TimeZone == userTimeZone {
+	if c.SelectedReport().Schedule.TimeZone == userTimeZone {
 		if c.Debug {
 			logrus.Info("using user timezone")
 		}
-		return c.Schedule.UserTimeZone(u)
+		return c.SelectedReport().Schedule.UserTimeZone(u)
 	}
 	if c.Debug {
 		logrus.Info("using report utc time")
 	}
-	return c.Schedule.TodayTime()
+	return c.SelectedReport().Schedule.TodayTime()
 }
