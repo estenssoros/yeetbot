@@ -42,6 +42,15 @@ func (c *Config) NewClient(report *Report) *Client {
 	}
 }
 
+func (c *Config) NewClientFromChannel(channel string) (*Client, error) {
+	for _, report := range c.Reports {
+		if report.Channel == channel {
+			return c.NewClient(report), nil
+		}
+	}
+	return nil, errors.New("unable to find report")
+}
+
 // ConfigFromReader creates a config from a reader
 func ConfigFromReader(r io.Reader) (*Config, error) {
 	data, err := ioutil.ReadAll(r)

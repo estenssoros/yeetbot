@@ -29,7 +29,7 @@ func (r *Report) TodayTime() (time.Time, error) {
 }
 
 // FindUserReport selects closest previous report to current time
-func FindReportByUser(user *slack.User, userReports map[string][]*Report) (*Report, error) {
+func (c *Client) FindReportByUser(user *slack.User, userReports map[string][]*Report) (*Report, error) {
 	closestTime := struct {
 		index int
 		time  int64
@@ -49,4 +49,22 @@ func FindReportByUser(user *slack.User, userReports map[string][]*Report) (*Repo
 		}
 	}
 	return userReports[user.RealName][closestTime.index], nil
+}
+
+// InitiateReport intiates a new report for a user
+func (c *Client) InitiateReport(user *slack.User) error {
+	// TODO this
+	return nil
+}
+
+// IsReportComplete checks to see if the user has completed all questions
+func (c *Client) IsReportComplete(user *slack.User) bool {
+	// TODO this
+	return true
+}
+
+// CompleteReport sends the users report to slack
+func (c *Client) CompleteReport(user *slack.User) error {
+	// TODO this
+	return nil
 }

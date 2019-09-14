@@ -14,7 +14,7 @@ type EventRequest struct {
 		Ts          string `json:"ts"`
 		Team        string `json:"team"`
 		Channel     string `json:"channel"`
-		EventTs     string `json:"event_ts"`
+		EventTs     int    `json:"event_ts"`
 		ChannelType string `json:"channel_type"`
 	} `json:"event"`
 	Type        string   `json:"type"`

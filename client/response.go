@@ -13,15 +13,28 @@ import (
 
 // Response stored in elastic
 type Response struct {
-	ID              uuid.UUID `json:"id"`
-	User            string    `json:"user"`
-	Report          string    `json:"report"`
-	Date            time.Time `json:"date"`
-	PendingResponse bool      `json:"pending_response"`
-	Responses       []string  `json:"responses"`
+	ID       uuid.UUID `json:"id"`
+	Team     string    `json:"team"`
+	Channel  string    `json:"channel"`
+	UserID   string    `json:"user_id"`
+	EventTS  int64     `json:"event_ts"`
+	Date     time.Time `json:"date"`
+	Question string    `json:"question"`
+	Text     string    `json:"text"`
 }
 
-// GetResponsesByUser gets user response from elastic search
+func (r Response) EsType() string {
+	return `response`
+}
+
+type RecordResponseInput struct {
+	Question *Question
+	User     *slack.User
+	Text     string
+}
+
+// GetUserResponse gets user response from elastic search
+// list most recent responses on channel
 func (c *Client) GetUserResponse(user *slack.User) (*Response, error) {
 	es := elasticsvc.New(context.Background())
 	es.SetURL(c.ElasticURL)
@@ -39,19 +52,9 @@ func (c *Client) GetUserResponse(user *slack.User) (*Response, error) {
 	return reports[len(reports)-1], nil
 }
 
-// AddUserResponse puts user response to elastic search
-func (c *Client) AddUserResponse(response *Response) error {
-	es := elasticsvc.New(context.Background())
-	es.SetURL(c.ElasticURL)
-	fmt.Println("adding")
-	return es.PutOne(c.ElasticIndex, response)
-}
-
-// RecordResponse adds response to responses only if it has pending status
-// sets pending status to false
-// and returns total number of responses recorded
-func (c *Client) RecordResponse(user *slack.User, response *Response, message string) (int, error) {
-	return 0, nil
+// RecordResponse adds response to responses and returns total number of responses recorded
+func (c *Client) RecordResponse(input *RecordResponseInput) error {
+	return nil
 }
 
 // CompleteResponse sets pending status to false from response
