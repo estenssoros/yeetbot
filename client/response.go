@@ -11,9 +11,9 @@ import (
 type Response struct {
 	ID       uuid.UUID `json:"id"`
 	Team     string    `json:"team"`
-	Channel  string    `json:"channel"`
+	Report   string    `json:"report"`
 	UserID   string    `json:"user_id"`
-	EventTS  int64     `json:"event_ts"`
+	EventTS  string    `json:"event_ts"`
 	Date     time.Time `json:"date"`
 	Question string    `json:"question"`
 	Text     string    `json:"text"`
