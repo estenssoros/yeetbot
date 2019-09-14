@@ -50,3 +50,21 @@ func (c *Client) FindReportByUser(user *slack.User, userReports map[string][]*Re
 	}
 	return userReports[user.RealName][closestTime.index], nil
 }
+
+// InitiateReport intiates a new report for a user
+func (c *Client) InitiateReport(user *slack.User) error {
+	// TODO this
+	return nil
+}
+
+// IsReportComplete checks to see if the user has completed all questions
+func (c *Client) IsReportComplete(user *slack.User) bool {
+	// TODO this
+	return true
+}
+
+// CompleteReport sends the users report to slack
+func (c *Client) CompleteReport(user *slack.User) error {
+	// TODO this
+	return nil
+}
