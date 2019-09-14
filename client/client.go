@@ -28,6 +28,11 @@ func init() {
 
 // Client the guy that does all the work
 type Client struct {
+
+	UserToken string    `json:"user_token"`
+	BotToken  string    `json:"bot_token"`
+	YeetUser  string    `json:"yeet_user"`
+	Debug     bool      `json:"debug"`
 	ElasticIndex string `json:"elastic_index"`
 	UserReports  map[string][]*Report
 	UserMap      map[string]*slack.User
@@ -278,6 +283,28 @@ func (c *Client) ListMessages(channelID string) ([]*slack.HistoryMessage, error)
 	return resp.Messages, nil
 }
 
+// ListTodayMessages lists messages from today
+func (c *Client) ListTodayMessages(channelID string) ([]*slack.HistoryMessage, error) {
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	data, err := newAPIRequest(slack.ConversationHistory).
+		addParam("token", c.BotToken).
+		addParam("channel", channelID).
+		addParam("oldest", fmt.Sprint(today.Unix())).
+		Get()
+	if err != nil {
+		return nil, errors.Wrap(err, "api requests")
+	}
+	resp := &listMessagesResponse{}
+	if err := json.Unmarshal(data, resp); err != nil {
+		return nil, errors.Wrap(err, "unmarshal")
+	}
+	if !resp.OK {
+		return nil, errors.New(resp.Error)
+	}
+	return resp.Messages, nil
+}
+
 type listDirectMessageChannelsReponse struct {
 	OK       bool             `json:"ok"`
 	Error    string           `json:"error"`
@@ -299,6 +326,7 @@ func (c *Client) ListDirectMessageChannels() ([]*slack.Channel, error) {
 	if !resp.OK {
 		return nil, errors.New(resp.Error)
 	}
+	fmt.Println(string(data))
 	return resp.Channels, nil
 }
 

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/estenssoros/yeetbot/client"
@@ -24,13 +25,11 @@ var (
     "settings": {
         "number_of_shards": 1,
         "number_of_replicas": 1
-    },
+    }, 
     "mappings": {
         "response": {
             "properties": {
-								"id": 						{"type": "text"},
-								"report":     		{"type": "text"},
-								"channel":     		{"type": "text"},
+				        "team":           {"type": "text"},
                 "user_id":     		{"type": "text"},
                 "event_ts":     	{"type": "integer"},
                 "date":      			{"type": "date", "format": "dateOptionalTime"},
@@ -126,6 +125,7 @@ var elasticPutCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		es := elasticsvc.New(context.Background())
 		es.SetURL(elasticURL)
+
 		name, _ := cmd.Flags().GetString("name")
 		report, _ := cmd.Flags().GetString("report")
 		response, _ := cmd.Flags().GetString("message")
@@ -135,6 +135,7 @@ var elasticPutCmd = &cobra.Command{
 			Channel:  "daily-standup",
 			UserID:   name,
 			EventTS:  time.Now().Unix(),
+
 			Date:     time.Now(),
 			Question: "How do you feel?",
 			Text:     response,

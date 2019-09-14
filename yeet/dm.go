@@ -31,7 +31,7 @@ var dmListCmd = &cobra.Command{
 			return errors.Wrap(err, "client list direct messages")
 		}
 		for _, channel := range channels {
-			fmt.Println(channel.ID, channel.User)
+			fmt.Println(channel.Name, channel.ID, channel.User)
 		}
 		return nil
 	},

@@ -19,11 +19,13 @@ var (
 
 // Config all info for a yeetbot config
 type Config struct {
-	UserToken  string    `json:"user_token"`
-	BotToken   string    `json:"bot_token"`
+	UserToken string    `json:"user_token"`
+	BotToken  string    `json:"bot_token"`
+	YeetUser  string    `json::""yeet_userid`
+	Debug     bool      `json:"debug"`
+	Reports   []*Report `json:"reports"`
+
 	ElasticURL string    `json:"elastic_url"`
-	Debug      bool      `json:"debug"`
-	Reports    []*Report `json:"reports"`
 }
 
 func (c Config) String() string {
@@ -33,7 +35,12 @@ func (c Config) String() string {
 
 // NewClient creates a report client from a config
 func (c *Config) NewClient(report *Report) *Client {
+
 	client := &Client{
+    UserToken: c.UserToken,
+		BotToken:  c.BotToken,
+    Debug:     c.Debug,
+		YeetUser:  c.YeetUser,
 		ElasticIndex: elasticIndex,
 		UserReports:  map[string][]*Report{},
 		UserMap:      map[string]*slack.User{},
@@ -42,15 +49,6 @@ func (c *Config) NewClient(report *Report) *Client {
 	}
 	client.PopulateUserReports()
 	return client
-}
-
-func (c *Config) NewClientFromChannel(channel string) (*Client, error) {
-	for _, report := range c.Reports {
-		if report.Channel == channel {
-			return c.NewClient(report), nil
-		}
-	}
-	return nil, errors.New("unable to find report")
 }
 
 // ConfigFromReader creates a config from a reader
