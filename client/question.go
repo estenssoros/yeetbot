@@ -1,6 +1,8 @@
 package client
 
-import "github.com/estenssoros/yeetbot/slack"
+import (
+	"github.com/estenssoros/yeetbot/slack"
+)
 
 // Question a question to ask a user
 // Color is the attachment color
@@ -11,13 +13,14 @@ type Question struct {
 	Options []string `yaml:"options,omitempty"`
 }
 
-// PostFirstQuestion sends the first question to the user
-// and creates a new response in elastic search with "pending_response"
-func (c *Client) PostFirstQuestion(user *slack.User) error {
+// PostNextQuestion sends the next question to the user
+func (c *Client) PostNextQuestion(user *slack.User) error {
+	// TODO check to see if we are on first question and initiate report
 	return nil
 }
 
-// PostNextQuestion sends the next question to the user
-func (c *Client) PostNextQuestion(user *slack.User) error {
-	return nil
+// GetLastQuestion gets the last question asked by yeetbot
+func (c *Client) GetRecentQuestion(user *slack.User) (*Question, error) {
+	// TODO this
+	return nil, nil
 }
