@@ -31,11 +31,7 @@ var userListCmd = &cobra.Command{
 		}
 
 		for _, user := range users {
-			if verbose {
-				fmt.Println(user)
-			} else {
-				fmt.Println(user.ID, user.Name)
-			}
+			fmt.Println(user.ID, user.Name)
 		}
 		return nil
 	},
