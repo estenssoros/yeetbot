@@ -13,11 +13,12 @@ type Question struct {
 
 // PostFirstQuestion sends the first question to the user
 // and creates a new response in elastic search with "pending_response"
-func (c *Client) PostFirstQuestion(user *slack.User) error {
+func (c *Client) PostFirstQuestion(user *slack.User, response *Response) error {
 	return nil
 }
 
 // PostNextQuestion sends the next question to the user
-func (c *Client) PostNextQuestion(user *slack.User) error {
+// and sets status to pending response
+func (c *Client) PostNextQuestion(user *slack.User, response *Response) error {
 	return nil
 }

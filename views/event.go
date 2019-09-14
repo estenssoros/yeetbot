@@ -34,28 +34,27 @@ func EventHandler(cc client.Context) error {
 		return cc.JSON(http.StatusInternalServerError, err)
 	}
 	if response == nil {
-		err := c.PostFirstQuestion(user)
+		err := c.PostFirstQuestion(user, response)
 		if err != nil {
 			log.Println(err)
 			return cc.JSON(http.StatusInternalServerError, err)
 		}
 		cc.JSON(http.StatusOK, req.Challenge)
 	}
-	c.Response = response
-	total, err := c.RecordResponse(user, req.Event.Text)
+	total, err := c.RecordResponse(user, response, req.Event.Text)
 	if err != nil {
 		log.Println(err)
 		return cc.JSON(http.StatusInternalServerError, err)
 	}
 	if total == len(c.Report.Questions) {
-		err := c.PostNextQuestion(user)
+		err := c.PostNextQuestion(user, response)
 		if err != nil {
 			log.Println(err)
 			return cc.JSON(http.StatusInternalServerError, err)
 		}
 		cc.JSON(http.StatusOK, req.Challenge)
 	}
-	c.CompleteResponse(user)
+	c.CompleteResponse(user, response)
 	// send complete message to report channel
 
 	return cc.JSON(http.StatusOK, req.Challenge)

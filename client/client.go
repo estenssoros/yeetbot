@@ -23,10 +23,11 @@ var (
 
 // Client the guy that does all the work
 type Client struct {
-	UserToken string    `json:"user_token"`
-	BotToken  string    `json:"bot_token"`
-	Debug     bool      `json:"debug"`
-	Response  *Response `json:"response"`
+	UserToken    string `json:"user_token"`
+	BotToken     string `json:"bot_token"`
+	ElasticURL   string `json:"elastic_url"`
+	ElasticIndex string `json:"elastic_index"`
+	Debug        bool   `json:"debug"`
 	*Report
 }
 
@@ -363,7 +364,7 @@ func (c *Client) GetUserByName(userName string) (*slack.User, error) {
 		return nil, errors.Wrap(err, "client list users")
 	}
 	for _, u := range users {
-		if u.Name == userName {
+		if u.Name == userName || u.RealName == userName {
 			return u, nil
 		}
 	}

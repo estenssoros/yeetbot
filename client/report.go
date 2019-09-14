@@ -39,7 +39,7 @@ func FindReportByUser(user *slack.User, userReports map[string][]*Report) (*Repo
 		return nil, errors.New("No reports found")
 	}
 	for i, report := range userReports[user.RealName] {
-		t, err := time.Parse(time.Kitchen, report.Schedule.Time)
+		t, err := time.Parse("15:04", report.Schedule.Time)
 		if err != nil {
 			return nil, err
 		}

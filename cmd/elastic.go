@@ -18,6 +18,7 @@ import (
 var (
 	elasticURL = ""
 	index      = "yeetbot"
+	testIndex  = "yeetbot-test"
 	mapping    = `
 {
     "settings": {
@@ -41,15 +42,21 @@ var (
 
 func init() {
 	elasticURL = os.Getenv("ELASTIC_URL")
+
+	elasticCreateCmd.Flags().Bool("test", false, "Uses test index")
+	elasticDeleteCreateCmd.Flags().Bool("test", false, "Uses test index")
+	elasticSearchCmd.Flags().Bool("test", false, "Uses test index")
+
+	elasticSearchCmd.Flags().StringP("name", "n", "", "Username to search or add")
+	elasticPutCmd.Flags().StringP("report", "r", "", "Report to add")
+	elasticPutCmd.Flags().StringP("message", "m", "", "Message to add")
+
 	ElasticCmd.AddCommand(elasticDeleteCmd)
 	ElasticCmd.AddCommand(elasticCreateCmd)
 	ElasticCmd.AddCommand(elasticDeleteCreateCmd)
 	ElasticCmd.AddCommand(elasticSearchCmd)
 	ElasticCmd.AddCommand(elasticPutCmd)
 
-	elasticSearchCmd.Flags().StringP("name", "n", "", "Username to search or add")
-	elasticPutCmd.Flags().StringP("report", "r", "", "Report to add")
-	elasticPutCmd.Flags().StringP("message", "m", "", "Message to add")
 }
 
 var ElasticCmd = &cobra.Command{
@@ -76,7 +83,15 @@ var elasticCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		svc := elasticsvc.New(context.Background())
 		svc.SetURL(elasticURL)
-		if err := svc.CreateIndex(index, mapping); err != nil {
+		useTest, err := cmd.Flags().GetBool("test")
+		if err != nil {
+			return errors.Wrap(err, "read flag")
+		}
+		i := index
+		if useTest {
+			i = testIndex
+		}
+		if err := svc.CreateIndex(i, mapping); err != nil {
 			return errors.Wrap(err, "create index")
 		}
 		return nil
@@ -89,10 +104,18 @@ var elasticDeleteCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		svc := elasticsvc.New(context.Background())
 		svc.SetURL(elasticURL)
-		if err := svc.DeleteIndex(index); err != nil {
+		useTest, err := cmd.Flags().GetBool("test")
+		if err != nil {
+			return errors.Wrap(err, "read flag")
+		}
+		i := index
+		if useTest {
+			i = testIndex
+		}
+		if err := svc.DeleteIndex(i); err != nil {
 			return errors.Wrap(err, "delete index")
 		}
-		if err := svc.CreateIndex(index, mapping); err != nil {
+		if err := svc.CreateIndex(i, mapping); err != nil {
 			return errors.Wrap(err, "create index")
 		}
 		return nil
@@ -110,9 +133,18 @@ var elasticSearchCmd = &cobra.Command{
 		}
 		query := elastic.NewPrefixQuery("user", name)
 		responses := []*client.Response{}
-		if _, err := es.Search(index, query, &responses); err != nil {
+		useTest, err := cmd.Flags().GetBool("test")
+		if err != nil {
+			return errors.Wrap(err, "read flag")
+		}
+		i := index
+		if useTest {
+			i = testIndex
+		}
+		if _, err := es.Search(i, query, &responses); err != nil {
 			return err
 		}
+		fmt.Println("Results: ")
 		for i := range responses {
 			fmt.Printf("%+v", responses[i])
 		}
