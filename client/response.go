@@ -7,6 +7,7 @@ import (
 
 	"github.com/estenssoros/yeetbot/slack"
 	"github.com/olivere/elastic"
+	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"github.com/seaspancode/services/elasticsvc"
 )
@@ -52,13 +53,28 @@ func (c *Client) GetUserResponse(user *slack.User) (*Response, error) {
 	return reports[len(reports)-1], nil
 }
 
-// RecordResponse adds response to responses and returns total number of responses recorded
+// RecordResponse adds response to responses
 func (c *Client) RecordResponse(input *RecordResponseInput) error {
+	resp := &Response{
+		Report:   c.Report.Name,
+		Channel:  c.Report.Channel,
+		UserID:   input.User.ID,
+		EventTS:  time.Now().Unix(),
+		Date:     time.Now(),
+		Question: input.Question.Text,
+		Text:     input.Text,
+	}
+	es := elasticsvc.New(context.Background())
+	es.SetURL(c.ElasticURL)
+	if err := es.PutOne(c.ElasticIndex, resp); err != nil {
+		return errors.Wrap(err, "adding response")
+	}
 	return nil
 }
 
 // CompleteResponse sets pending status to false from response
 // and sends "thank you" message to user
 func (c *Client) CompleteResponse(user *slack.User, response *Response) error {
+	// TODO: this
 	return nil
 }

@@ -9,8 +9,7 @@ import (
 // Context wrapper around echo's context
 type Context struct {
 	echo.Context
-	Config      *Config
-	UserReports map[string][]*Report
+	Config *Config
 }
 
 // Middleware to wrap echo's context with Context
@@ -20,16 +19,7 @@ func Middleware(next echo.HandlerFunc) echo.HandlerFunc {
 		log.Fatalf("Failed to load config: %s", err.Error())
 	}
 	return func(c echo.Context) error {
-		cc := &Context{Context: c, Config: config, UserReports: map[string][]*Report{}}
-		cc.populateUserReports()
+		cc := &Context{Context: c, Config: config}
 		return next(cc)
-	}
-}
-
-func (c *Context) populateUserReports() {
-	for _, report := range c.Config.Reports {
-		for _, user := range report.Users {
-			c.UserReports[user.Name] = append(c.UserReports[user.Name], report)
-		}
 	}
 }

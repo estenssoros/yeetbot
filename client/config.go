@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/estenssoros/yeetbot/slack"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -32,14 +33,15 @@ func (c Config) String() string {
 
 // NewClient creates a report client from a config
 func (c *Config) NewClient(report *Report) *Client {
-	return &Client{
-		UserToken:    c.UserToken,
-		BotToken:     c.BotToken,
-		ElasticURL:   c.ElasticURL,
+	client := &Client{
 		ElasticIndex: elasticIndex,
-		Debug:        c.Debug,
+		UserReports:  map[string][]*Report{},
+		UserMap:      map[string]*slack.User{},
+		Config:       c,
 		Report:       report,
 	}
+	client.PopulateUserReports()
+	return client
 }
 
 func (c *Config) NewClientFromChannel(channel string) (*Client, error) {

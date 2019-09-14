@@ -1,34 +1,10 @@
 package client
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/seaspancode/services/elasticsvc"
-)
-
-var (
-	testIndex   = "yeetbot-test"
-	testMapping = `
-	{
-			"settings": {
-					"number_of_shards": 1,
-					"number_of_replicas": 1
-			},
-			"mappings": {
-					"Response": {
-							"properties": {
-									"user":     					{"type": "text"},
-									"report":  						{"type": "text"},
-									"date":      					{"type": "date", "format": "dateOptionalTime"},
-									"pending_response":   {"type": "boolean"},
-									"responses":  				{"type": "text"}
-							}
-					}
-			}
-	}`
 )
 
 func TestClientGetUserResponses(t *testing.T) {
@@ -62,10 +38,10 @@ func TestClientGetUserResponses(t *testing.T) {
 	// if err != nil {
 	// 	t.Fatal(err)
 	// }
-	err = client.AddUserResponse(newResponse)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// err = client.RecordResponse(newResponse)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
 	client.Report = report
 	response, err := client.GetUserResponse(user)
 	if err != nil {
@@ -81,14 +57,14 @@ func TestClientRecordAndCompleteResponses(t *testing.T) {
 	// TODO: CompleteResponse
 }
 
-func deleteIndex(url string) error {
-	svc := elasticsvc.New(context.Background())
-	svc.SetURL(url)
-	if err := svc.DeleteIndex(testIndex); err != nil {
-		return err
-	}
-	if err := svc.CreateIndex(testIndex, testMapping); err != nil {
-		return err
-	}
-	return nil
-}
+// func deleteIndex(url string) error {
+// 	svc := elasticsvc.New(context.Background())
+// 	svc.SetURL(url)
+// 	if err := svc.DeleteIndex(testIndex); err != nil {
+// 		return err
+// 	}
+// 	if err := svc.CreateIndex(testIndex, testMapping); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
