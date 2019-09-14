@@ -5,7 +5,27 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/estenssoros/yeetbot/slack"
 )
+
+var (
+	testIndex = "yeetbot-test"
+)
+
+func MockNewClient(t *testing.T) *Client {
+	config, err := ConfigFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := config.NewClient(config.Reports[0])
+	client.ElasticIndex = testIndex
+	return client
+}
+
+func MockNewUser() *slack.User {
+	return &slack.User{ID: "berto"}
+}
 
 func TestReadConfig(t *testing.T) {
 	path := os.Getenv("YEETBOT_CONFIG")

@@ -19,13 +19,19 @@ var (
 	defaultUsername = "yeetbot"
 	defaultIcon     = ":ghost:"
 	yeetbotBucket   = "yeetbot"
+	userIDMap       map[string]*string
 )
+
+func init() {
+	userIDMap = map[string]*string{}
+}
 
 // Client the guy that does all the work
 type Client struct {
-	UserToken string `json:"user_token"`
-	BotToken  string `json:"bot_token"`
-	Debug     bool   `json:"debug"`
+	ElasticIndex string `json:"elastic_index"`
+	UserReports  map[string][]*Report
+	UserMap      map[string]*slack.User
+	*Config
 	*Report
 }
 
@@ -223,20 +229,6 @@ func (c *Client) ListChannels() ([]*slack.Channel, error) {
 	return resp.Channels, nil
 }
 
-// GetUserFromRequest gets a user froma request user id
-func (c *Client) GetUserFromRequest(req *slack.EventRequest) (*slack.User, error) {
-	users, err := c.ListUsers()
-	if err != nil {
-		return nil, errors.Wrap(err, "client list users")
-	}
-	for _, u := range users {
-		if u.ID == req.Event.User {
-			return u, nil
-		}
-	}
-	return nil, errors.Errorf("could not locate user %s", req.Event.User)
-}
-
 // ListConversations lists conversations
 func (c *Client) ListConversations() (interface{}, error) {
 	data, err := newAPIRequest(slack.ConversationsList).
@@ -357,12 +349,20 @@ func (c *Client) DeleteBotMessage(channelID string, messageTS string) error {
 
 // GetUserByName lists slack users and then returns the user
 func (c *Client) GetUserByName(userName string) (*slack.User, error) {
+	userID := userIDMap[userName]
+	if userID != nil {
+		if user := c.UserMap[*userID]; user != nil {
+			return user, nil
+		}
+	}
 	users, err := c.ListUsers()
 	if err != nil {
 		return nil, errors.Wrap(err, "client list users")
 	}
 	for _, u := range users {
-		if u.Name == userName {
+		if u.Name == userName || u.RealName == userName {
+			userIDMap[userName] = &u.ID
+			c.UserMap[u.ID] = u
 			return u, nil
 		}
 	}
@@ -375,7 +375,11 @@ type userInfoResponse struct {
 	User  *slack.User `json:"user"`
 }
 
+// GetUserByID searches for a user by iD
 func (c *Client) GetUserByID(userID string) (*slack.User, error) {
+	if user := c.UserMap[userID]; user != nil {
+		return user, nil
+	}
 	data, err := newAPIRequest(slack.UsersInfo).
 		addParam("user", userID).
 		addParam("include_local", "true").
@@ -391,6 +395,7 @@ func (c *Client) GetUserByID(userID string) (*slack.User, error) {
 	if !resp.OK {
 		return nil, errors.New(resp.Error)
 	}
+	c.UserMap[userID] = resp.User
 	return resp.User, nil
 }
 
@@ -408,4 +413,12 @@ func (c *Client) UserReportTime(u *slack.User) (time.Time, error) {
 		logrus.Info("using report utc time")
 	}
 	return c.Schedule.TodayTime()
+}
+
+func (c *Client) PopulateUserReports() {
+	for _, report := range c.Config.Reports {
+		for _, user := range report.Users {
+			c.UserReports[user.Name] = append(c.UserReports[user.Name], report)
+		}
+	}
 }

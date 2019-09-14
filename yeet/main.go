@@ -1,16 +1,20 @@
 package main
 
 import (
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-var (
-	verbose bool
-)
+func init() {
+	customFormatter := new(logrus.TextFormatter)
+	customFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	logrus.SetFormatter(customFormatter)
+	customFormatter.FullTimestamp = true
+}
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show more text")
 	rootCmd.AddCommand(userCmd)
 	rootCmd.AddCommand(channelCmd)
 	rootCmd.AddCommand(messageCmd)
@@ -24,6 +28,10 @@ var rootCmd = &cobra.Command{
 }
 
 func main() {
+	start := time.Now()
+	defer func() {
+		logrus.Infof("process took %v", time.Since(start))
+	}()
 	if err := rootCmd.Execute(); err != nil {
 		logrus.Fatal(err)
 	}

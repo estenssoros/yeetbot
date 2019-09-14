@@ -6,21 +6,24 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/estenssoros/yeetbot/slack"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
 var (
-	yeetENV = "YEETBOT_CONFIG"
+	yeetENV      = "YEETBOT_CONFIG"
+	elasticIndex = "yeetbot"
 )
 
 // Config all info for a yeetbot config
 type Config struct {
-	UserToken string    `json:"user_token"`
-	BotToken  string    `json:"bot_token"`
-	Debug     bool      `json:"debug"`
-	Reports   []*Report `json:"reports"`
+	UserToken  string    `json:"user_token"`
+	BotToken   string    `json:"bot_token"`
+	ElasticURL string    `json:"elastic_url"`
+	Debug      bool      `json:"debug"`
+	Reports    []*Report `json:"reports"`
 }
 
 func (c Config) String() string {
@@ -30,12 +33,24 @@ func (c Config) String() string {
 
 // NewClient creates a report client from a config
 func (c *Config) NewClient(report *Report) *Client {
-	return &Client{
-		UserToken: c.UserToken,
-		BotToken:  c.BotToken,
-		Debug:     c.Debug,
-		Report:    report,
+	client := &Client{
+		ElasticIndex: elasticIndex,
+		UserReports:  map[string][]*Report{},
+		UserMap:      map[string]*slack.User{},
+		Config:       c,
+		Report:       report,
 	}
+	client.PopulateUserReports()
+	return client
+}
+
+func (c *Config) NewClientFromChannel(channel string) (*Client, error) {
+	for _, report := range c.Reports {
+		if report.Channel == channel {
+			return c.NewClient(report), nil
+		}
+	}
+	return nil, errors.New("unable to find report")
 }
 
 // ConfigFromReader creates a config from a reader
