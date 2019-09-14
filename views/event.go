@@ -34,6 +34,7 @@ func EventHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
+	// did user ask for report shortcut
 	if req.Event.Text == "report" && !cli.HasUserStartedReport(user) {
 		if err := cli.InitiateReport(user); err != nil {
 			return c.JSON(http.StatusInternalServerError, errors.Wrap(err, "client initiate report"))
@@ -48,7 +49,7 @@ func EventHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, errors.Wrap(err, "client get last question"))
 	}
 
-	// record a response for a step OR overwrite a response for a step
+	// record a response for a step OR overwrite a response from a previous stage
 	err = cli.RecordResponse(&client.RecordResponseInput{
 		Question: question,
 		User:     user,
