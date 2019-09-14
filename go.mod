@@ -15,7 +15,7 @@ require (
 	github.com/mailru/easyjson v0.7.0 // indirect
 	github.com/olivere/elastic v6.2.23+incompatible
 	github.com/pkg/errors v0.8.1
-	github.com/satori/go.uuid v1.2.0
+	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/seaspancode/services v2.0.0+incompatible
 	github.com/sha1sum/aws_signing_client v0.0.0-20170514202702-9088e4c7b34b // indirect
 	github.com/sirupsen/logrus v1.4.2
