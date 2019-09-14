@@ -224,20 +224,6 @@ func (c *Client) ListChannels() ([]*slack.Channel, error) {
 	return resp.Channels, nil
 }
 
-// GetUserFromRequest gets a user from a request user id
-func (c *Client) GetUserFromRequest(req *slack.EventRequest) (*slack.User, error) {
-	users, err := c.ListUsers()
-	if err != nil {
-		return nil, errors.Wrap(err, "client list users")
-	}
-	for _, u := range users {
-		if u.ID == req.Event.User {
-			return u, nil
-		}
-	}
-	return nil, errors.Errorf("could not locate user %s", req.Event.User)
-}
-
 // ListConversations lists conversations
 func (c *Client) ListConversations() (interface{}, error) {
 	data, err := newAPIRequest(slack.ConversationsList).
@@ -357,6 +343,7 @@ func (c *Client) DeleteBotMessage(channelID string, messageTS string) error {
 }
 
 // GetUserByName lists slack users and then returns the user
+// TODO this should idealy include a map AND update the config with user ID so we don't have to make an API call everytime
 func (c *Client) GetUserByName(userName string) (*slack.User, error) {
 	users, err := c.ListUsers()
 	if err != nil {
@@ -376,6 +363,7 @@ type userInfoResponse struct {
 	User  *slack.User `json:"user"`
 }
 
+// GetUserByID searches for a user by iD
 func (c *Client) GetUserByID(userID string) (*slack.User, error) {
 	data, err := newAPIRequest(slack.UsersInfo).
 		addParam("user", userID).
