@@ -30,11 +30,13 @@ var mapping = `
     "mappings": {
         "response": {
             "properties": {
-                "user":     		{"type": "text"},
-                "report":  			{"type": "text"},
-                "date":      		{"type": "date", "format": "dateOptionalTime"},
-                "pending_response": {"type": "boolean"},
-                "responses":  		{"type": "text"}
+				"team":             {"type": "text"},
+                "channel":  	    {"type": "text"},
+				"user_id":     		{"type": "text"},
+				"date":             {"type": "date", "format":"dateOptionalTime"},
+				"event_ts":         {"type": "integer"},
+				"question":         {"type": "text"},
+                "text":      		{"type": "text"}
             }
         }
     }
@@ -114,16 +116,18 @@ var elasticPutCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		es := elasticsvc.New(context.Background())
 		es.SetURL(elasticURL)
-		name, _ := cmd.Flags().GetString("name")
-		report, _ := cmd.Flags().GetString("report")
-		response, _ := cmd.Flags().GetString("message")
+		// name, _ := cmd.Flags().GetString("name")
+		// report, _ := cmd.Flags().GetString("report")
+		// response, _ := cmd.Flags().GetString("message")
 		doc := &client.Response{
-			ID:              uuid.Must(uuid.NewV4()),
-			User:            name,
-			Report:          report,
-			Date:            time.Now(),
-			Responses:       []string{response},
-			PendingResponse: true,
+			ID:       uuid.Must(uuid.NewV4()),
+			Team:     "skunkwerkz",
+			Channel:  "daily-standup",
+			UserID:   "asdf",
+			EventTS:  time.Now().Unix(),
+			Date:     time.Now(),
+			Question: "How do you feel?",
+			Text:     "gooood",
 		}
 		if err := es.PutOne(index, doc); err != nil {
 			return errors.Wrap(err, "adding response")

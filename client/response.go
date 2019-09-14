@@ -9,12 +9,18 @@ import (
 
 // Response stored in elastic
 type Response struct {
-	ID              uuid.UUID `json:"id"`
-	User            string    `json:"user"`
-	Report          string    `json:"report"`
-	Date            time.Time `json:"date"`
-	PendingResponse bool      `json:"pending_response"`
-	Responses       []string  `json:"responses"`
+	ID       uuid.UUID `json:"id"`
+	Team     string    `json:"team"`
+	Channel  string    `json:"channel"`
+	UserID   string    `json:"user_id"`
+	EventTS  int64     `json:"event_ts"`
+	Date     time.Time `json:"date"`
+	Question string    `json:"question"`
+	Text     string    `json:"text"`
+}
+
+func (r Response) EsType() string {
+	return `response`
 }
 
 type RecordResponseInput struct {
