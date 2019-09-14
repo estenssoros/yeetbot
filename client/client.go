@@ -224,7 +224,7 @@ func (c *Client) ListChannels() ([]*slack.Channel, error) {
 	return resp.Channels, nil
 }
 
-// GetUserFromRequest gets a user froma request user id
+// GetUserFromRequest gets a user from a request user id
 func (c *Client) GetUserFromRequest(req *slack.EventRequest) (*slack.User, error) {
 	users, err := c.ListUsers()
 	if err != nil {
