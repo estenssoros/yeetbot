@@ -23,17 +23,12 @@ var (
 
 // Client the guy that does all the work
 type Client struct {
-	UserToken      string    `json:"user_token"`
-	BotToken       string    `json:"bot_token"`
-	YeetUser       string    `json:"yeet_user"`
-	Debug          bool      `json:"debug"`
-	Response       *Response `json:"response"`
-	Reports        []*Report
-	selectedReport int
-}
-
-func (c *Client) SelectedReport() *Report {
-	return c.Reports[c.selectedReport]
+	UserToken string    `json:"user_token"`
+	BotToken  string    `json:"bot_token"`
+	YeetUser  string    `json:"yeet_user"`
+	Debug     bool      `json:"debug"`
+	Response  *Response `json:"response"`
+	*Report   `json:"report"`
 }
 
 func (c Client) String() string {
@@ -49,7 +44,7 @@ func (c *Client) applyMessageDefaults(msg *slack.Message) {
 		msg.Icon = defaultIcon
 	}
 	if msg.Channel == "" {
-		msg.Channel = c.SelectedReport().Channel
+		msg.Channel = c.Channel
 	}
 }
 
@@ -131,7 +126,7 @@ func (c *Client) SendGreeting(user *slack.User) error {
 	if c.UserToken == "" {
 		return errors.New("missing user token")
 	}
-	text, err := user.Template(c.SelectedReport().IntroMessage)
+	text, err := user.Template(c.IntroMessage)
 	if err != nil {
 		return errors.Wrap(err, "user template")
 	}
@@ -178,7 +173,7 @@ func (c *Client) SendGreeting(user *slack.User) error {
 
 // Run runs the questions shotgun style
 func (c *Client) Run(u *User) error {
-	for i, s := range c.SelectedReport().Questions {
+	for i, s := range c.Questions {
 		if err := c.GenericMessage(u, s.Text); err != nil {
 			return errors.Wrapf(err, "generic message step: %d", i)
 		}
@@ -416,14 +411,14 @@ func (c *Client) UserReportTime(u *slack.User) (time.Time, error) {
 	if !c.HasUser(u) {
 		return time.Time{}, errors.New("missing user")
 	}
-	if c.SelectedReport().Schedule.TimeZone == userTimeZone {
+	if c.Schedule.TimeZone == userTimeZone {
 		if c.Debug {
 			logrus.Info("using user timezone")
 		}
-		return c.SelectedReport().Schedule.UserTimeZone(u)
+		return c.Schedule.UserTimeZone(u)
 	}
 	if c.Debug {
 		logrus.Info("using report utc time")
 	}
-	return c.SelectedReport().Schedule.TodayTime()
+	return c.Schedule.TodayTime()
 }
