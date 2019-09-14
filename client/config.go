@@ -19,6 +19,7 @@ var (
 type Config struct {
 	UserToken string    `json:"user_token"`
 	BotToken  string    `json:"bot_token"`
+	YeetUser  string    `json::""yeet_userid`
 	Debug     bool      `json:"debug"`
 	Reports   []*Report `json:"reports"`
 }
@@ -34,17 +35,9 @@ func (c *Config) NewClient(report *Report) *Client {
 		UserToken: c.UserToken,
 		BotToken:  c.BotToken,
 		Debug:     c.Debug,
+		YeetUser:  c.YeetUser,
 		Report:    report,
 	}
-}
-
-func (c *Config) NewClientFromChannel(channel string) (*Client, error) {
-	for _, report := range c.Reports {
-		if report.Channel == channel {
-			return c.NewClient(report), nil
-		}
-	}
-	return nil, errors.New("unable to find report")
 }
 
 // ConfigFromReader creates a config from a reader
