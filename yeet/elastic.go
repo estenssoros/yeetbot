@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/estenssoros/yeetbot/client"
@@ -26,12 +27,12 @@ var mapping = `
     "settings": {
         "number_of_shards": 1,
         "number_of_replicas": 1
-    },
+    }, 
     "mappings": {
         "response": {
             "properties": {
 				"team":             {"type": "text"},
-                "channel":  	    {"type": "text"},
+				"report":           {"type": "text"},
 				"user_id":     		{"type": "text"},
 				"date":             {"type": "date", "format":"dateOptionalTime"},
 				"event_ts":         {"type": "integer"},
@@ -116,15 +117,11 @@ var elasticPutCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		es := elasticsvc.New(context.Background())
 		es.SetURL(elasticURL)
-		// name, _ := cmd.Flags().GetString("name")
-		// report, _ := cmd.Flags().GetString("report")
-		// response, _ := cmd.Flags().GetString("message")
 		doc := &client.Response{
 			ID:       uuid.Must(uuid.NewV4()),
 			Team:     "skunkwerkz",
-			Channel:  "daily-standup",
 			UserID:   "asdf",
-			EventTS:  time.Now().Unix(),
+			EventTS:  strconv.FormatInt(time.Now().Unix(), 10),
 			Date:     time.Now(),
 			Question: "How do you feel?",
 			Text:     "gooood",
