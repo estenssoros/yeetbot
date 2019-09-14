@@ -5,7 +5,7 @@ import "github.com/estenssoros/yeetbot/slack"
 // User naive user data structure
 type User struct {
 	Name string
-	ID   string `yaml:"slackID,omitempty"`
+	ID   string `yaml:"id,omitempty"`
 }
 
 func (c *Client) HasUser(user *slack.User) bool {
