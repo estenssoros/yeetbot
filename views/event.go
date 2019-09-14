@@ -35,7 +35,12 @@ func EventHandler(c echo.Context) error {
 	}
 
 	// did user ask for report shortcut
-	if req.Event.Text == "report" && !cli.HasUserStartedReport(user) {
+	started, err := cli.HasUserStartedReport(user)
+	if err != nil {
+		logrus.Error(err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	if req.Event.Text == "report" && !started {
 		if err := cli.InitiateReport(user); err != nil {
 			return c.JSON(http.StatusInternalServerError, errors.Wrap(err, "client initiate report"))
 		}
@@ -55,7 +60,6 @@ func EventHandler(c echo.Context) error {
 		User:     user,
 		Text:     req.Event.Text,
 	})
-
 	if err != nil {
 		logrus.Error(err)
 		return c.JSON(http.StatusInternalServerError, errors.Wrap(err, "client record response"))
