@@ -44,17 +44,19 @@ func TestClientGetUserResponses(t *testing.T) {
 		t.Fatal(err)
 	}
 	mockUserReports := map[string][]*Report{mockUser: []*Report{config.Reports[0]}}
-	report, err := FindReportByUser(user, mockUserReports)
+	report, err := client.FindReportByUser(user, mockUserReports)
 	if err != nil {
 		t.Fatal(err)
 	}
 	newResponse := &Response{
-		ID:              uuid.NewV4(),
-		User:            user.RealName,
-		Report:          report.Name,
-		Date:            time.Now(),
-		Responses:       []string{},
-		PendingResponse: true,
+		ID:       uuid.Must(uuid.NewV4()),
+		Report:   report.Name,
+		Channel:  report.Channel,
+		UserID:   user.ID,
+		EventTS:  time.Now().Unix(),
+		Date:     time.Now(),
+		Question: report.Questions[0].Text,
+		Text:     "test",
 	}
 	// err = deleteIndex(client.ElasticURL)
 	// if err != nil {

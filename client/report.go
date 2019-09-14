@@ -51,7 +51,7 @@ func (c *Client) FindReportByUser(user *slack.User, userReports map[string][]*Re
 	return userReports[user.RealName][closestTime.index], nil
 }
 
-// InitiateReport intiates a new report for a user
+// InitiateReport initiates a new report for a user
 func (c *Client) InitiateReport(user *slack.User) error {
 	// TODO this
 	return nil

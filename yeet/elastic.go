@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -17,11 +16,10 @@ import (
 )
 
 var (
-	elasticURL = os.Getenv("ELASTIC_URL")
-	index      = "yeetbot"
-)
-
-var mapping = `
+	elasticURL   = os.Getenv("ELASTIC_URL")
+	elasticIndex = "yeetbot"
+	testIndex    = "yeetbot-test"
+	mapping      = `
 {
     "settings": {
         "number_of_shards": 1,
@@ -30,18 +28,20 @@ var mapping = `
     "mappings": {
         "response": {
             "properties": {
-				"team":             {"type": "text"},
-                "channel":  	    {"type": "text"},
-				"user_id":     		{"type": "text"},
-				"date":             {"type": "date", "format":"dateOptionalTime"},
-				"event_ts":         {"type": "integer"},
-				"question":         {"type": "text"},
-                "text":      		{"type": "text"}
+								"id": 						{"type": "text"},
+								"report":     		{"type": "text"},
+								"channel":     		{"type": "text"},
+                "user_id":     		{"type": "text"},
+                "event_ts":     	{"type": "integer"},
+                "date":      			{"type": "date", "format": "dateOptionalTime"},
+                "question":   		{"type": "text"},
+                "text":  					{"type": "text"}
             }
         }
     }
 }
 `
+)
 
 func init() {
 	elasticCmd.AddCommand(elasticDeleteCmd)
@@ -50,8 +50,14 @@ func init() {
 	elasticCmd.AddCommand(elasticSearchCmd)
 	elasticCmd.AddCommand(elasticPutCmd)
 
-	elasticSearchCmd.Flags().StringP("name", "n", "berto", "Username to search or add")
-	elasticPutCmd.Flags().StringP("report", "r", "daily_standu", "Report to add")
+	elasticCreateCmd.Flags().Bool("test", false, "Uses test index")
+	elasticDeleteCreateCmd.Flags().Bool("test", false, "Uses test index")
+	elasticSearchCmd.Flags().Bool("test", false, "Uses test index")
+	elasticPutCmd.Flags().Bool("test", false, "Uses test index")
+
+	elasticSearchCmd.Flags().StringP("name", "n", "berto", "User id to search or add")
+	elasticPutCmd.Flags().StringP("name", "n", "berto", "User id to search or add")
+	elasticPutCmd.Flags().StringP("report", "r", "daily_standup", "Report to add")
 	elasticPutCmd.Flags().StringP("message", "m", "good", "Message to add")
 }
 
@@ -66,7 +72,7 @@ var elasticDeleteCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		svc := elasticsvc.New(context.Background())
 		svc.SetURL(elasticURL)
-		return errors.Wrap(svc.DeleteIndex(index), "delete index")
+		return errors.Wrap(svc.DeleteIndex(elasticIndex), "delete index")
 	},
 }
 
@@ -76,6 +82,7 @@ var elasticCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		svc := elasticsvc.New(context.Background())
 		svc.SetURL(elasticURL)
+		index := getIndex(cmd)
 		return errors.Wrap(svc.CreateIndex(index, mapping), "create index")
 	},
 }
@@ -86,6 +93,7 @@ var elasticDeleteCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		svc := elasticsvc.New(context.Background())
 		svc.SetURL(elasticURL)
+		index := getIndex(cmd)
 		if err := svc.DeleteIndex(index); err != nil {
 			return errors.Wrap(err, "delete index")
 		}
@@ -99,13 +107,15 @@ var elasticSearchCmd = &cobra.Command{
 		es := elasticsvc.New(context.Background())
 		es.SetURL(elasticURL)
 		name, _ := cmd.Flags().GetString("name")
-		query := elastic.NewPrefixQuery("user", name)
+		query := elastic.NewPrefixQuery("user_id", name)
 		responses := []*client.Response{}
-		if _, err := es.Search(index, query, &responses); err != nil {
+		index := getIndex(cmd)
+		if err := es.GetMany(index, query, &responses); err != nil {
 			return err
 		}
+		logrus.Infof("results for %s: ", index)
 		for i := range responses {
-			fmt.Printf("%+v", responses[i])
+			logrus.Infof("%+v", responses[i])
 		}
 		return nil
 	},
@@ -116,23 +126,32 @@ var elasticPutCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		es := elasticsvc.New(context.Background())
 		es.SetURL(elasticURL)
-		// name, _ := cmd.Flags().GetString("name")
-		// report, _ := cmd.Flags().GetString("report")
-		// response, _ := cmd.Flags().GetString("message")
+		name, _ := cmd.Flags().GetString("name")
+		report, _ := cmd.Flags().GetString("report")
+		response, _ := cmd.Flags().GetString("message")
 		doc := &client.Response{
 			ID:       uuid.Must(uuid.NewV4()),
-			Team:     "skunkwerkz",
+			Report:   report,
 			Channel:  "daily-standup",
-			UserID:   "asdf",
+			UserID:   name,
 			EventTS:  time.Now().Unix(),
 			Date:     time.Now(),
 			Question: "How do you feel?",
-			Text:     "gooood",
+			Text:     response,
 		}
+		index := getIndex(cmd)
 		if err := es.PutOne(index, doc); err != nil {
 			return errors.Wrap(err, "adding response")
 		}
-		logrus.Infof("added %s", doc.ID)
+		logrus.Infof("added %s to %s", doc.ID, index)
 		return nil
 	},
+}
+
+func getIndex(cmd *cobra.Command) string {
+	useTest, _ := cmd.Flags().GetBool("test")
+	if useTest {
+		return testIndex
+	}
+	return elasticIndex
 }
