@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/estenssoros/yeetbot/client"
@@ -135,7 +134,6 @@ var elasticPutCmd = &cobra.Command{
 			Channel:  "daily-standup",
 			UserID:   name,
 			EventTS:  time.Now().Unix(),
-
 			Date:     time.Now(),
 			Question: "How do you feel?",
 			Text:     response,

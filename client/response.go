@@ -16,6 +16,7 @@ import (
 type Response struct {
 	ID       uuid.UUID `json:"id"`
 	Team     string    `json:"team"`
+	Channel  string    `json:"channel"`
 	Report   string    `json:"report"`
 	UserID   string    `json:"user_id"`
 	EventTS  string    `json:"event_ts"`
@@ -31,6 +32,7 @@ func (r Response) EsType() string {
 type RecordResponseInput struct {
 	Question *Question
 	User     *slack.User
+	EventTS  string
 	Text     string
 }
 
@@ -57,9 +59,10 @@ func (c *Client) GetUserResponse(user *slack.User) (*Response, error) {
 func (c *Client) RecordResponse(input *RecordResponseInput) error {
 	resp := &Response{
 		Report:   c.Report.Name,
+		Team:     "seaspan",
 		Channel:  c.Report.Channel,
 		UserID:   input.User.ID,
-		EventTS:  time.Now().Unix(),
+		EventTS:  input.EventTS,
 		Date:     time.Now(),
 		Question: input.Question.Text,
 		Text:     input.Text,

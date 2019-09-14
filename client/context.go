@@ -1,11 +1,9 @@
 package client
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/labstack/echo"
-	"github.com/pkg/errors"
 )
 
 // Context wrapper around echo's context

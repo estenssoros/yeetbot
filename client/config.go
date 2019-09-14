@@ -25,7 +25,7 @@ type Config struct {
 	Debug     bool      `json:"debug"`
 	Reports   []*Report `json:"reports"`
 
-	ElasticURL string    `json:"elastic_url"`
+	ElasticURL string `json:"elastic_url"`
 }
 
 func (c Config) String() string {
@@ -35,12 +35,8 @@ func (c Config) String() string {
 
 // NewClient creates a report client from a config
 func (c *Config) NewClient(report *Report) *Client {
-
 	client := &Client{
-    UserToken: c.UserToken,
-		BotToken:  c.BotToken,
-    Debug:     c.Debug,
-		YeetUser:  c.YeetUser,
+		YeetUser:     c.YeetUser,
 		ElasticIndex: elasticIndex,
 		UserReports:  map[string][]*Report{},
 		UserMap:      map[string]*slack.User{},

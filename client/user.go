@@ -28,6 +28,7 @@ func (c *Client) HasUser(user *slack.User) bool {
 
 // HasUserStartedReport checks to see if a report has already been started today
 func (c *Client) HasUserStartedReport(user *slack.User) (bool, error) {
+	// TODO: finish
 	es := elasticsvc.New(context.Background())
 	es.SetURL(c.ElasticURL)
 	query := elastic.NewPrefixQuery("user_id", user.ID)

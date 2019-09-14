@@ -28,11 +28,10 @@ func init() {
 
 // Client the guy that does all the work
 type Client struct {
-
-	UserToken string    `json:"user_token"`
-	BotToken  string    `json:"bot_token"`
-	YeetUser  string    `json:"yeet_user"`
-	Debug     bool      `json:"debug"`
+	UserToken    string `json:"user_token"`
+	BotToken     string `json:"bot_token"`
+	YeetUser     string `json:"yeet_user"`
+	Debug        bool   `json:"debug"`
 	ElasticIndex string `json:"elastic_index"`
 	UserReports  map[string][]*Report
 	UserMap      map[string]*slack.User

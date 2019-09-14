@@ -23,7 +23,7 @@ func getMessageIndexByTS(messages []*slack.HistoryMessage, eventTS string) (int,
 }
 
 func getMessageByUserID(messages []*slack.HistoryMessage, userID string) (*slack.HistoryMessage, error) {
-	for i, m := range messages {
+	for _, m := range messages {
 		if m.User == userID {
 			return m, nil
 		}
@@ -60,37 +60,36 @@ func EventHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-
 	// msgIdx, err := getMessageIndexByTS(messages, req.Event.Ts)
-  
+
 	// did user ask for report shortcut
-	started, err := cli.HasUserStartedReport(user)
+	started, err := cli.HasUserStartedReport()
 	if err != nil {
 		logrus.Error(err)
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	if req.Event.Text == "report" && !started {
-		if err := cli.InitiateReport(user); err != nil {
+		if err := cli.InitiateReport(); err != nil {
 			return c.JSON(http.StatusInternalServerError, errors.Wrap(err, "client initiate report"))
 		}
 		return c.NoContent(http.StatusOK)
 	}
 
 	// what stage is this user at?
-	question, err := cli.GetRecentQuestion(user)
+	question, err := cli.GetRecentQuestion()
 
 	if err != nil {
 		logrus.Error(err)
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-
 	//question, err := getMessageByUserID(message[msgIdx:], cli.YeetUser)
 
 	// record a response for a step OR overwrite a response from a previous stage
 	err = cli.RecordResponse(&client.RecordResponseInput{
 		Question: question,
-		User:     user,
+		User:     cli.YeetUser,
+		EventTS:  req.Event.EventTs,
 		Text:     req.Event.Text,
 	})
 

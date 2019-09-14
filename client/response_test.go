@@ -8,6 +8,7 @@ import (
 )
 
 func TestClientGetUserResponses(t *testing.T) {
+	// TODO: fix
 	config, err := ConfigFromEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -29,7 +30,7 @@ func TestClientGetUserResponses(t *testing.T) {
 		Report:   report.Name,
 		Channel:  report.Channel,
 		UserID:   user.ID,
-		EventTS:  time.Now().Unix(),
+		EventTS:  "timestamp",
 		Date:     time.Now(),
 		Question: report.Questions[0].Text,
 		Text:     "test",
