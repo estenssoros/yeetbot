@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -133,7 +134,7 @@ var elasticPutCmd = &cobra.Command{
 			Report:   report,
 			Channel:  "daily-standup",
 			UserID:   name,
-			EventTS:  time.Now().Unix(),
+			EventTS:  fmt.Sprint(time.Now().Unix()),
 			Date:     time.Now(),
 			Question: "How do you feel?",
 			Text:     response,
