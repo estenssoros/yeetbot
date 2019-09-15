@@ -22,11 +22,13 @@ func (m *Message) AddAttachment(a *Attachment) {
 type HistoryMessage struct {
 	ClientMsgID string        `json:"client_msg_id,omitempty"`
 	Type        string        `json:"type"`
+	SubType     string        `json:"subtype,omitempty"`
 	Text        string        `json:"text"`
 	User        string        `json:"user"`
 	Ts          string        `json:"ts"`
 	Team        string        `json:"team"`
 	BotID       string        `json:"bot_id,omitempty"`
+	BotLink     string        `json:"bot_link,omitempty"`
 	Attachments []*Attachment `json:"attachments,omitempty"`
 }
 
