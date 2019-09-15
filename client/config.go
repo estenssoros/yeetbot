@@ -37,6 +37,7 @@ func (c Config) String() string {
 func (c *Config) NewClient(report *Report) *Client {
 	client := &Client{
 		YeetUser:     c.YeetUser,
+		BotToken:     c.BotToken,
 		ElasticIndex: elasticIndex,
 		UserReports:  map[string][]*Report{},
 		UserMap:      map[string]*slack.User{},
