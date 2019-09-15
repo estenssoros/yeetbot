@@ -10,7 +10,6 @@ import (
 
 func init() {
 	messageCmd.AddCommand(messageDeleteCmd)
-	messageCmd.AddCommand(messageListCmd)
 }
 
 var messageCmd = &cobra.Command{
@@ -24,8 +23,8 @@ var messageDeleteCmd = &cobra.Command{
 	},
 }
 
-var messageListCmd = &cobra.Command{
-	Use:   "list",
+var listMessageCmd = &cobra.Command{
+	Use:   "message",
 	Short: "list messages in a channel",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {

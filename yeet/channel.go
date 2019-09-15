@@ -8,18 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	channelCmd.AddCommand(channelListCmd)
-	channelCmd.AddCommand(channelPurgeCmd)
-}
-
-var channelCmd = &cobra.Command{
+var listChannelCmd = &cobra.Command{
 	Use:   "channel",
-	Short: "do channel stuff",
-}
-
-var channelListCmd = &cobra.Command{
-	Use:   "list",
 	Short: "list channels",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config, err := client.ConfigFromEnv()

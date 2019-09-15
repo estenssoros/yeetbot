@@ -8,17 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	dmCmd.AddCommand(dmListCmd)
-}
-
-var dmCmd = &cobra.Command{
+var listDmCmd = &cobra.Command{
 	Use:   "dm",
-	Short: "direct message",
-}
-
-var dmListCmd = &cobra.Command{
-	Use:   "list",
 	Short: "list direct messages",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config, err := client.ConfigFromEnv()

@@ -8,16 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	userCmd.AddCommand(userListCmd)
-}
-
-var userCmd = &cobra.Command{
-	Use: "user",
-}
-
-var userListCmd = &cobra.Command{
-	Use:   "list",
+var listUserCmd = &cobra.Command{
+	Use:   "user",
 	Short: "list users in a workspace",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config, err := client.ConfigFromEnv()
