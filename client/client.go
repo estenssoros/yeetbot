@@ -216,6 +216,7 @@ func (c *Client) ListUsers() ([]*slack.User, error) {
 type listChannelResponse struct {
 	OK       bool             `json:"ok"`
 	Channels []*slack.Channel `json:"channels"`
+	Error    string           `json:"error"`
 }
 
 // ListChannels list channels in workspace
@@ -229,6 +230,9 @@ func (c *Client) ListChannels() ([]*slack.Channel, error) {
 	resp := &listChannelResponse{}
 	if err := json.Unmarshal(data, resp); err != nil {
 		return nil, errors.Wrap(err, "unmarshal")
+	}
+	if !resp.OK {
+		return nil, errors.New(resp.Error)
 	}
 	return resp.Channels, nil
 }
@@ -325,7 +329,6 @@ func (c *Client) ListDirectMessageChannels() ([]*slack.Channel, error) {
 	if !resp.OK {
 		return nil, errors.New(resp.Error)
 	}
-	fmt.Println(string(data))
 	return resp.Channels, nil
 }
 
