@@ -16,7 +16,7 @@ var listDmCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "client config from env")
 		}
-		c := config.NewClient(config.Reports[0])
+		c := config.NewClient()
 		channels, err := c.ListDirectMessageChannels()
 		if err != nil {
 			return errors.Wrap(err, "client list direct messages")

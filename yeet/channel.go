@@ -16,7 +16,7 @@ var listChannelCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "client config from env")
 		}
-		c := config.NewClient(config.Reports[0])
+		c := config.NewClient()
 		channels, err := c.ListChannels()
 		if err != nil {
 			return errors.Wrap(err, "client list channels")
@@ -42,7 +42,7 @@ var channelPurgeCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "client config from env")
 		}
-		c := config.NewClient(config.Reports[0])
+		c := config.NewClient()
 		messages, err := c.ListMessages(args[0])
 		if err != nil {
 			return errors.Wrap(err, "client list messages")
