@@ -20,76 +20,104 @@ var (
 		meetingIndex,
 	}
 	reportMapping = `
-	{
-		"settings": {
-			"number_of_shards": 1,
-			"number_of_replicas": 1
-		},
-		"mappings": {
-			"report": {
-				"properties": {
-					"meetingID": {
-						"type": "text"
-					},
-					"userID": {
-						"type": "text"
-					},
-					"createdAt": {
-						"type": "date",
-						"format": "dateOptionalTime"
-					},
-					"events": {
-						"type": "object",
-						"properties": {
-							"question": {
-								"type": "text"
-							},
-							"response": {
-								"type": "text"
-							},
-							"eventTS": {
-								"type": "integer"
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+{
+    "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 1
+    },
+    "mappings": {
+        "report": {
+            "properties": {
+                "meetingID": {
+                    "type": "text"
+                },
+                "userID": {
+                    "type": "text"
+                },
+                "createdAt": {
+                    "type": "date",
+                    "format": "dateOptionalTime"
+                },
+                "events": {
+                    "type": "object",
+                    "properties": {
+                        "question": {
+                            "type": "text"
+                        },
+                        "response": {
+                            "type": "text"
+                        },
+                        "eventTS": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "done": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}
 	`
 	meetingMapping = `
-	{
-		"settings": {
-			"number_of_shards": 1,
-			"number_of_replicas": 1
-		},
-		"mappings": {
-			"meeting": {
-				"properties": {
-					"name": {
-						"type": "text"
-					},
-					"channel": {
-						"type": "text"
-					},
-					"team": {
-						"type": "text"
-					},
-					"scheduledStart": {
-						"type": "date",
-						"format": "dateOptionalTime"
-					},
-					"users": {
-						"type": "text"
-					},
-					"questions": {
-						"type": "text"
-					}
-				}
-			}
-		}
-	}
-	`
+{
+    "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 1
+    },
+    "mappings": {
+        "meeting": {
+            "properties": {
+                "name": {
+                    "type": "text"
+                },
+                "channel": {
+                    "type": "text"
+                },
+                "team": {
+                    "type": "text"
+                },
+                "scheduledStart": {
+                    "type": "date",
+                    "format": "dateOptionalTime"
+                },
+                "users": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "text"
+                        },
+                        "id": {
+                            "type": "text"
+                        }
+                    }
+                },
+                "questions": {
+                    "type": "object",
+                    "properties": {
+                        "text": {
+                            "type": "text"
+                        },
+                        "color": {
+                            "type": "text"
+                        },
+                        "options": {
+                            "type": "text"
+                        }
+                    }
+                },
+                "started": {
+                    "type": "boolean"
+                },
+                "ended": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}
+`
 	indexMap = map[string]string{
 		reportIndex:  reportMapping,
 		meetingIndex: meetingMapping,
