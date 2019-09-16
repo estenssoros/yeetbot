@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/olivere/elastic"
+	"github.com/seaspancode/services/elasticsvc"
 	"github.com/sirupsen/logrus"
 
 	"github.com/estenssoros/yeetbot/client"
 	"github.com/pkg/errors"
-	"github.com/seaspancode/services/elasticsvc"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -19,6 +18,7 @@ func init() {
 	meetingCmd.AddCommand(newMeetingCmd)
 	meetingCmd.AddCommand(meetingStartCmd)
 	meetingCmd.AddCommand(meetingEndCmd)
+	meetingCmd.AddCommand(deleteMeetingCmd)
 }
 
 var meetingCmd = &cobra.Command{
@@ -69,14 +69,9 @@ var meetingStartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "start a meeting",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		meetings := []*client.Meeting{}
-		es := elasticsvc.New(context.Background())
-		q := elastic.NewBoolQuery()
-		{
-			q = q.Must(elastic.NewTermQuery("started", false))
-		}
-		if err := es.GetMany(meetingIndex, q, &meetings); err != nil {
-			return errors.Wrap(err, "es get all")
+		meetings, err := client.ListPendingMeetings()
+		if err != nil {
+			return errors.Wrap(err, "list pending meetings")
 		}
 		if len(args) == 0 {
 			fmt.Printf("found %d meetings\n", len(meetings))
@@ -91,6 +86,7 @@ var meetingStartCmd = &cobra.Command{
 					return errors.Wrap(err, "client start meeting")
 				}
 				m.Started = true
+				es := elasticsvc.New(context.Background())
 				if err := es.PutOne(meetingIndex, m); err != nil {
 					return errors.Wrap(err, "es put one")
 				}
@@ -106,15 +102,9 @@ var meetingEndCmd = &cobra.Command{
 	Use:   "end",
 	Short: "end a meeting",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		meetings := []*client.Meeting{}
-		es := elasticsvc.New(context.Background())
-		q := elastic.NewBoolQuery()
-		{
-			q = q.Must(elastic.NewTermQuery("started", true))
-			q = q.Must(elastic.NewTermQuery("ended", false))
-		}
-		if err := es.GetMany(meetingIndex, q, &meetings); err != nil {
-			return errors.Wrap(err, "es get all")
+		meetings, err := client.ListActiveMeetings()
+		if err != nil {
+			return errors.Wrap(err, "list active meetings")
 		}
 		if len(args) == 0 {
 			fmt.Printf("found %d meetings in progress\n", len(meetings))
@@ -126,7 +116,37 @@ var meetingEndCmd = &cobra.Command{
 		for _, m := range meetings {
 			if m.ID == args[0] {
 				m.Ended = true
+				es := elasticsvc.New(context.Background())
 				if err := es.PutOne(meetingIndex, m); err != nil {
+					return errors.Wrap(err, "es put one")
+				}
+				logrus.Infof("ended meeting %s", m.ID)
+				return nil
+			}
+		}
+		return nil
+	},
+}
+
+var deleteMeetingCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "delete a meeting",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		meetings, err := client.ListAllMeetings()
+		if err != nil {
+			return errors.Wrap(err, "client list all meetings")
+		}
+		if len(args) == 0 {
+			fmt.Printf("found %d meetings in progress\n", len(meetings))
+			for _, m := range meetings {
+				fmt.Println(m.ID)
+			}
+			return nil
+		}
+		for _, m := range meetings {
+			if m.ID == args[0] {
+				es := elasticsvc.New(context.Background())
+				if err := es.DeleteOne(meetingIndex, m); err != nil {
 					return errors.Wrap(err, "es put one")
 				}
 				logrus.Infof("ended meeting %s", m.ID)
