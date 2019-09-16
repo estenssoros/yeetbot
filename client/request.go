@@ -1,30 +1,46 @@
 package client
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type apiRequest struct {
-	url    string
-	suffix string
-	params map[string]string
+	url     string
+	suffix  string
+	params  map[string]string
+	body    []byte
+	headers map[string]string
 }
 
 func newAPIRequest(suffix string) *apiRequest {
 	return &apiRequest{
-		url:    "https://slack.com/api/",
-		suffix: suffix,
-		params: map[string]string{},
+		url:     "https://slack.com/api/",
+		suffix:  suffix,
+		params:  map[string]string{},
+		headers: map[string]string{},
 	}
 }
 
 func (r *apiRequest) addParam(key, value string) *apiRequest {
 	r.params[key] = value
+	return r
+}
+
+func (r *apiRequest) addHeader(key, value string) *apiRequest {
+	r.headers[key] = value
+	return r
+}
+
+func (r *apiRequest) addBody(v interface{}) *apiRequest {
+	ju, _ := json.Marshal(v)
+	r.body = ju
 	return r
 }
 
@@ -46,17 +62,35 @@ func (r *apiRequest) Get() ([]byte, error) {
 	return r.Do(http.MethodGet)
 }
 
+func (r *apiRequest) Post() ([]byte, error) {
+	return r.Do(http.MethodPost)
+}
+
 func (r *apiRequest) Do(method string) ([]byte, error) {
 	url, err := r.craftURL()
 	if err != nil {
 		return nil, errors.Wrap(err, "craft url")
 	}
-	log.Println(method, url)
-	req, err := http.NewRequest(method, url, nil)
+	logrus.Println(method, url)
+	var (
+		req *http.Request
+	)
+	if r.body != nil {
+		req, err = http.NewRequest(method, url, bytes.NewReader(r.body))
+	} else {
+		req, err = http.NewRequest(method, url, nil)
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "http new request")
 	}
-	resp, err := http.DefaultClient.Do(req)
+	{
+		req.Header.Set("Content-Type", "application/json;charset=iso-8859-1")
+	}
+	for k, v := range r.headers {
+		req.Header.Set(k, v)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "http do request")
 	}
