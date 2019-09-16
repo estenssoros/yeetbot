@@ -27,10 +27,12 @@ func init() {
 
 // Client the guy that does all the work
 type Client struct {
-	UserToken string `json:"user_token"`
-	BotToken  string `json:"bot_token"`
-	YeetUser  string `json:"yeet_user"`
-	Debug     bool   `json:"debug"`
+	UserToken    string `json:"user_token"`
+	BotToken     string `json:"bot_token"`
+	YeetUser     string `json:"yeet_user"`
+	Debug        bool   `json:"debug"`
+	meetingIndex string
+	reportIndex  string
 	*Config
 }
 

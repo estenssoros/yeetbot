@@ -69,7 +69,12 @@ var meetingStartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "start a meeting",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		meetings, err := client.ListPendingMeetings()
+		config, err := client.ConfigFromEnv()
+		if err != nil {
+			return errors.Wrap(err, "config from env")
+		}
+		c := config.NewClient()
+		meetings, err := c.ListPendingMeetings()
 		if err != nil {
 			return errors.Wrap(err, "list pending meetings")
 		}
@@ -102,7 +107,12 @@ var meetingEndCmd = &cobra.Command{
 	Use:   "end",
 	Short: "end a meeting",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		meetings, err := client.ListActiveMeetings()
+		config, err := client.ConfigFromEnv()
+		if err != nil {
+			return errors.Wrap(err, "config from env")
+		}
+		c := config.NewClient()
+		meetings, err := c.ListActiveMeetings()
 		if err != nil {
 			return errors.Wrap(err, "list active meetings")
 		}
@@ -132,7 +142,12 @@ var deleteMeetingCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "delete a meeting",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		meetings, err := client.ListAllMeetings()
+		config, err := client.ConfigFromEnv()
+		if err != nil {
+			return errors.Wrap(err, "config from env")
+		}
+		c := config.NewClient()
+		meetings, err := c.ListAllMeetings()
 		if err != nil {
 			return errors.Wrap(err, "client list all meetings")
 		}

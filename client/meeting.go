@@ -67,7 +67,7 @@ func (m *Meeting) CraftEvents() []*Event {
 }
 
 // CreateReports creatres reports from users
-func (m *Meeting) CreateReports() ([]*Report, error) {
+func (m *Meeting) CreateReports() []*Report {
 	reports := []*Report{}
 	for _, user := range m.Users {
 		report := &Report{
@@ -80,7 +80,7 @@ func (m *Meeting) CreateReports() ([]*Report, error) {
 		}
 		reports = append(reports, report)
 	}
-	return reports, nil
+	return reports
 }
 
 // CreateMeeting creates a meeting in elastic search
@@ -102,16 +102,13 @@ func (c *Client) CreateMeeting(m *Meeting) error {
 	}
 
 	es := elasticsvc.New(context.Background())
-	if err := es.PutOne("yeetmeet", m); err != nil {
+	if err := es.PutOne(c.meetingIndex, m); err != nil {
 		return errors.Wrap(err, "put one")
 	}
 
 	// create first report instance for each user
-	reports, err := m.CreateReports()
-	if err != nil {
-		return errors.Wrap(err, "create reports")
-	}
-	if err := es.PutMany("yeetreport", &reports); err != nil {
+	reports := m.CreateReports()
+	if err := es.PutMany(c.reportIndex, &reports); err != nil {
 		return errors.Wrap(err, "put many reports")
 	}
 	return nil
@@ -146,7 +143,7 @@ func (c *Client) GetActiveMeetingsForUser(user *slack.User) ([]*Meeting, error) 
 		q = q.Must(elastic.NewTermQuery("started", true))
 		q = q.Must(elastic.NewTermQuery("ended", false))
 	}
-	if err := es.GetMany("yeetmeet", q, &meetings); err != nil {
+	if err := es.GetMany(c.meetingIndex, q, &meetings); err != nil {
 		return nil, errors.Wrap(err, "es get all")
 	}
 	userMeetings := []*Meeting{}
@@ -162,7 +159,7 @@ func (c *Client) GetActiveMeetingsForUser(user *slack.User) ([]*Meeting, error) 
 }
 
 // ListActiveMeetings list the active meetings from a team's config
-func ListActiveMeetings() ([]*Meeting, error) {
+func (c *Client) ListActiveMeetings() ([]*Meeting, error) {
 	meetings := []*Meeting{}
 	es := elasticsvc.New(context.Background())
 	q := elastic.NewBoolQuery()
@@ -170,31 +167,31 @@ func ListActiveMeetings() ([]*Meeting, error) {
 		q = q.Must(elastic.NewTermQuery("started", true))
 		q = q.Must(elastic.NewTermQuery("ended", false))
 	}
-	if err := es.GetMany("yeetmeet", q, &meetings); err != nil {
+	if err := es.GetMany(c.meetingIndex, q, &meetings); err != nil {
 		return nil, errors.Wrap(err, "es get all")
 	}
 	return meetings, nil
 }
 
 // ListPendingMeetings from a teams config
-func ListPendingMeetings() ([]*Meeting, error) {
+func (c *Client) ListPendingMeetings() ([]*Meeting, error) {
 	meetings := []*Meeting{}
 	es := elasticsvc.New(context.Background())
 	q := elastic.NewBoolQuery()
 	{
 		q = q.Must(elastic.NewTermQuery("started", false))
 	}
-	if err := es.GetMany("yeetmeet", q, &meetings); err != nil {
+	if err := es.GetMany(c.meetingIndex, q, &meetings); err != nil {
 		return nil, errors.Wrap(err, "es get all")
 	}
 	return meetings, nil
 }
 
 // ListAllMeetings list all meetings from a teams config
-func ListAllMeetings() ([]*Meeting, error) {
+func (c *Client) ListAllMeetings() ([]*Meeting, error) {
 	meetings := []*Meeting{}
 	es := elasticsvc.New(context.Background())
-	if _, err := es.GetAll("yeetmeet", &meetings); err != nil {
+	if _, err := es.GetAll(c.meetingIndex, &meetings); err != nil {
 		return nil, errors.Wrap(err, "es get all")
 	}
 	return meetings, nil

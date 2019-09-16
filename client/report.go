@@ -57,7 +57,7 @@ func (r *Report) AddEvent(event *Event) {
 // SaveReport saves a report to an elastic index
 func (c *Client) SaveReport(report *Report) error {
 	es := elasticsvc.New(context.Background())
-	if err := es.PutOne("yeetreport", report); err != nil {
+	if err := es.PutOne(c.reportIndex, report); err != nil {
 		return errors.Wrap(err, "put one")
 	}
 	return nil
@@ -90,7 +90,7 @@ func (c *Client) GetOrCreateUserReport(meeting *Meeting, user *slack.User) (*Rep
 		q = q.Must(elastic.NewTermQuery("meetingID", meeting.ID))
 	}
 	reports := []*Report{}
-	if err := es.GetMany("yeetreport", q, &reports); err != nil {
+	if err := es.GetMany(c.reportIndex, q, &reports); err != nil {
 		return nil, err
 	}
 	if len(reports) == 0 {
@@ -112,7 +112,7 @@ func (c *Client) SubmitUserReport(m *Meeting, u *slack.User) error {
 		q = q.Must(elastic.NewTermQuery("userID", u.ID))
 	}
 	reports := []*Report{}
-	if err := es.GetMany("yeetreport", q, &reports); err != nil {
+	if err := es.GetMany(c.reportIndex, q, &reports); err != nil {
 		return errors.Wrap(err, "es get many")
 	}
 
@@ -136,5 +136,5 @@ func (c *Client) SubmitUserReport(m *Meeting, u *slack.User) error {
 		return errors.Wrap(err, "send message")
 	}
 	report.Done = true
-	return errors.Wrap(es.PutOne("yeetreport", report), "put report")
+	return errors.Wrap(es.PutOne(c.reportIndex, report), "put report")
 }

@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	yeetENV      = "YEETBOT_CONFIG"
-	elasticIndex = "yeetbot"
+	yeetENV             = "YEETBOT_CONFIG"
+	defaultMeetingIndex = "yeetmeet"
+	defaultReportIndex  = "yeetreport"
 )
 
 // Config all info for a yeetbot config
@@ -34,10 +35,12 @@ func (c Config) String() string {
 // NewClient creates a report client from a config
 func (c *Config) NewClient() *Client {
 	client := &Client{
-		UserToken: c.UserToken,
-		YeetUser:  c.YeetUser,
-		BotToken:  c.BotToken,
-		Config:    c,
+		UserToken:    c.UserToken,
+		YeetUser:     c.YeetUser,
+		BotToken:     c.BotToken,
+		Config:       c,
+		reportIndex:  defaultReportIndex,
+		meetingIndex: defaultMeetingIndex,
 	}
 	return client
 }
