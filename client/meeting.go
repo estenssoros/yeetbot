@@ -53,6 +53,7 @@ func (m *Meeting) HasUser(u *slack.User) bool {
 	return false
 }
 
+// CraftEvents creates events from question
 func (m *Meeting) CraftEvents() []*Event {
 	events := []*Event{}
 	for _, q := range m.Questions {
@@ -65,6 +66,7 @@ func (m *Meeting) CraftEvents() []*Event {
 	return events
 }
 
+// CreateReports creatres reports from users
 func (m *Meeting) CreateReports() ([]*Report, error) {
 	reports := []*Report{}
 	for _, user := range m.Users {
@@ -159,6 +161,7 @@ func (c *Client) GetActiveMeetingsForUser(user *slack.User) ([]*Meeting, error) 
 	return nil, errors.New("user has no active meetings")
 }
 
+// ListActiveMeetings list the active meetings from a team's config
 func ListActiveMeetings() ([]*Meeting, error) {
 	meetings := []*Meeting{}
 	es := elasticsvc.New(context.Background())
@@ -173,6 +176,7 @@ func ListActiveMeetings() ([]*Meeting, error) {
 	return meetings, nil
 }
 
+// ListPendingMeetings from a teams config
 func ListPendingMeetings() ([]*Meeting, error) {
 	meetings := []*Meeting{}
 	es := elasticsvc.New(context.Background())
@@ -186,6 +190,7 @@ func ListPendingMeetings() ([]*Meeting, error) {
 	return meetings, nil
 }
 
+// ListAllMeetings list all meetings from a teams config
 func ListAllMeetings() ([]*Meeting, error) {
 	meetings := []*Meeting{}
 	es := elasticsvc.New(context.Background())

@@ -24,6 +24,7 @@ func (s *Schedule) NextReportDate() time.Time {
 	return cronexpr.MustParse(s.Cron).Next(time.Now())
 }
 
+// UserReportDate gets the reprt date fora  user
 func (s *Schedule) UserReportDate(u *slack.User) time.Time {
 	t := s.NextReportDate()
 	if s.TimeZone == userTimeZone {

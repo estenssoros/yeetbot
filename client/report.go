@@ -18,7 +18,7 @@ type Event struct {
 	Question string `json:"question"`
 	Response string `json:"response"`
 	TS       string `json:"eventTS"`
-	Color    string `json:"color`
+	Color    string `json:"color"`
 }
 
 // Report a yeetbot report
@@ -32,6 +32,7 @@ type Report struct {
 	Done           bool      `json:"done"`
 }
 
+// EsType for elasticsvc
 func (r Report) EsType() string {
 	return `report`
 }
