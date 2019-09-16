@@ -17,6 +17,7 @@ require (
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/google/uuid v1.1.1 // indirect
+	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
@@ -28,8 +29,6 @@ require (
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/mailru/easyjson v0.7.0 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/olivere/elastic v6.2.23+incompatible
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.1.0 // indirect
@@ -42,7 +41,6 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
-	github.com/ugorji/go v1.1.7 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.3.3 // indirect
 	golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529 // indirect
