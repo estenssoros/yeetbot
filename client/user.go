@@ -1,14 +1,10 @@
 package client
 
 import (
-	"context"
-	"fmt"
+	"bytes"
+	"text/template"
 
-	"github.com/coreos/etcd/client"
-	"github.com/estenssoros/yeetbot/slack"
-	"github.com/olivere/elastic"
 	"github.com/pkg/errors"
-	"github.com/seaspancode/services/elasticsvc"
 )
 
 // User naive user data structure
@@ -17,25 +13,12 @@ type User struct {
 	ID   string `yaml:"id,omitempty"`
 }
 
-func (c *Client) HasUser(user *slack.User) bool {
-	for _, u := range c.Users {
-		if u.Name == user.Name {
-			return true
-		}
+// Template templates a user struct onto a string
+func (u *User) Template(t string) (string, error) {
+	tmpl := template.Must(template.New("").Parse(t))
+	var b bytes.Buffer
+	if err := tmpl.Execute(&b, u); err != nil {
+		return "", errors.Wrap(err, "tmpl execute")
 	}
-	return false
-}
-
-// HasUserStartedReport checks to see if a report has already been started today
-func (c *Client) HasUserStartedReport(user *slack.User) (bool, error) {
-	// TODO: finish
-	es := elasticsvc.New(context.Background())
-	es.SetURL(c.ElasticURL)
-	query := elastic.NewPrefixQuery("user_id", user.ID)
-	responses := []*client.Response{}
-	if err := es.GetMany(c.ElasticIndex, query, &responses); err != nil {
-		return false, errors.Wrap(err, "failed to get many")
-	}
-	fmt.Println(responses)
-	return false, nil
+	return b.String(), nil
 }
