@@ -1,6 +1,12 @@
 package slack
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/json"
+	"text/template"
+
+	"github.com/pkg/errors"
+)
 
 type User struct {
 	ID                string  `json:"id"`
@@ -63,6 +69,12 @@ func (p Profile) String() string {
 	return string(ju)
 }
 
+// Template templates a user struct onto a string
 func (u *User) Template(t string) (string, error) {
-	return ``, nil
+	tmpl := template.Must(template.New("").Parse(t))
+	var b bytes.Buffer
+	if err := tmpl.Execute(&b, u); err != nil {
+		return "", errors.Wrap(err, "tmpl execute")
+	}
+	return b.String(), nil
 }

@@ -15,7 +15,7 @@ type Question struct {
 }
 
 // PostFirstQuestion sends the first question to the user
-func (c *Client) PostFirstQuestion(m *Meeting, u *User) error {
+func (c *Client) PostFirstQuestion(m *Meeting, u *slack.User) error {
 	msg := &slack.Message{
 		Text:    m.Questions[0].Text,
 		Channel: "@" + u.Name,

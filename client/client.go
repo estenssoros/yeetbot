@@ -106,7 +106,7 @@ func (c *Client) postRequest(url string, v interface{}) error {
 }
 
 // GenericMessage sends a generic message
-func (c *Client) GenericMessage(u *User, text string) error {
+func (c *Client) GenericMessage(u *slack.User, text string) error {
 	msg := &slack.Message{
 		Text:    text,
 		Channel: "@" + u.Name,
@@ -116,7 +116,7 @@ func (c *Client) GenericMessage(u *User, text string) error {
 }
 
 // SendGreeting crafts and sends the greeting message
-func (c *Client) SendGreeting(m *Meeting, user *User) error {
+func (c *Client) SendGreeting(m *Meeting, user *slack.User) error {
 	if c.BotToken == "" {
 		return errors.New("missing bot token")
 	}
@@ -228,7 +228,7 @@ func (c *Client) ListConversations() (interface{}, error) {
 }
 
 // GetLastMessageFromUser gets the last message from a users
-func (c *Client) GetLastMessageFromUser(user *User) (*slack.Message, error) {
+func (c *Client) GetLastMessageFromUser(user *slack.User) (*slack.Message, error) {
 	conversations, err := c.ListConversations()
 	if err != nil {
 		return nil, errors.Wrap(err, "client list conversations")
