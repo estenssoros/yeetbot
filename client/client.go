@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/estenssoros/yeetbot/slack"
@@ -28,15 +27,11 @@ func init() {
 
 // Client the guy that does all the work
 type Client struct {
-	UserToken    string `json:"user_token"`
-	BotToken     string `json:"bot_token"`
-	YeetUser     string `json:"yeet_user"`
-	Debug        bool   `json:"debug"`
-	ElasticIndex string `json:"elastic_index"`
-	UserReports  map[string][]*Report
-	UserMap      map[string]*slack.User
+	UserToken string `json:"user_token"`
+	BotToken  string `json:"bot_token"`
+	YeetUser  string `json:"yeet_user"`
+	Debug     bool   `json:"debug"`
 	*Config
-	*Report
 }
 
 func (c Client) String() string {
@@ -52,65 +47,59 @@ func (c *Client) applyMessageDefaults(msg *slack.Message) {
 		msg.Icon = defaultIcon
 	}
 	if msg.Channel == "" {
-		msg.Channel = c.Channel
+		// msg.Channel = c.Channel
 	}
 }
 
 // SendMessage sends a slack message
 func (c *Client) SendMessage(msg *slack.Message) error {
-	c.applyMessageDefaults(msg)
-	u, err := url.Parse(slackurl + "/" + slack.ChatPostMessage)
-	if err != nil {
-		return errors.Wrap(err, "url parse")
-	}
-	if err := c.postRequest(u.String(), msg); err != nil {
+	// c.applyMessageDefaults(msg)
+	u := slackurl + "/" + slack.ChatPostMessage
+
+	if err := c.postRequest(u, msg); err != nil {
 		return errors.Wrap(err, "client post request")
 	}
 	return nil
 }
 
 func (c *Client) postRequest(url string, v interface{}) error {
-	if c.BotToken == "" {
-		return errors.New("missing bot token")
-	}
-	if c.UserToken == "" {
-		return errors.New("missing user token")
-	}
-	if c.Debug {
-		logrus.Infof("%s %s", http.MethodPost, url)
-	}
+
+	logrus.Infof("%s %s", http.MethodPost, url)
+
 	ju, _ := json.Marshal(v)
-	if c.Debug {
-		logrus.Info(string(ju))
-	}
+
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(ju))
+
 	if err != nil {
 		return errors.Wrap(err, "http new request")
 	}
-	{
-		req.Header.Add("Authorization", "Bearer "+c.BotToken)
-		req.Header.Add("Content-Type", "application/json;charset=iso-8859-1")
-	}
-	resp, err := http.DefaultClient.Do(req)
+
+	req.Header.Set("Authorization", "Bearer "+c.BotToken)
+	req.Header.Set("Content-Type", "application/json;charset=iso-8859-1")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "http default client do")
 	}
-	data, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Wrap(err, "read responses")
 	}
 	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("bad status code: %d, %s", resp.StatusCode, string(data))
+		return errors.Errorf("bad status code: %d, %s", resp.StatusCode, string(b))
 	}
+
 	slackresp := &slack.Response{}
-	if err := json.Unmarshal(data, slackresp); err != nil {
+	if err := json.Unmarshal(b, slackresp); err != nil {
 		return errors.Wrap(err, "unmarshal slack resp")
 	}
 	if slackresp.Warning != "" {
 		logrus.Warning(slackresp.Warning)
 	}
 	if !slackresp.OK {
-		logrus.Error(slackresp)
+		logrus.Error(string(b))
 		return errors.Wrap(errors.New(slackresp.Error), "slack response")
 	}
 	return nil
@@ -127,14 +116,14 @@ func (c *Client) GenericMessage(u *User, text string) error {
 }
 
 // SendGreeting crafts and sends the greeting message
-func (c *Client) SendGreeting(user *slack.User) error {
+func (c *Client) SendGreeting(m *Meeting, user *User) error {
 	if c.BotToken == "" {
 		return errors.New("missing bot token")
 	}
 	if c.UserToken == "" {
 		return errors.New("missing user token")
 	}
-	text, err := user.Template(c.IntroMessage)
+	text, err := user.Template(m.IntroMessage)
 	if err != nil {
 		return errors.Wrap(err, "user template")
 	}
@@ -174,17 +163,6 @@ func (c *Client) SendGreeting(user *slack.User) error {
 	}
 	if err := c.SendMessage(msg); err != nil {
 		return errors.Wrap(err, "send message")
-	}
-
-	return nil
-}
-
-// Run runs the questions shotgun style
-func (c *Client) Run(u *User) error {
-	for i, s := range c.Questions {
-		if err := c.GenericMessage(u, s.Text); err != nil {
-			return errors.Wrapf(err, "generic message step: %d", i)
-		}
 	}
 	return nil
 }
@@ -379,12 +357,6 @@ func (c *Client) DeleteBotMessage(channelID string, messageTS string) error {
 
 // GetUserByName lists slack users and then returns the user
 func (c *Client) GetUserByName(userName string) (*slack.User, error) {
-	userID := userIDMap[userName]
-	if userID != nil {
-		if user := c.UserMap[*userID]; user != nil {
-			return user, nil
-		}
-	}
 	users, err := c.ListUsers()
 	if err != nil {
 		return nil, errors.Wrap(err, "client list users")
@@ -392,7 +364,6 @@ func (c *Client) GetUserByName(userName string) (*slack.User, error) {
 	for _, u := range users {
 		if u.Name == userName || u.RealName == userName {
 			userIDMap[userName] = &u.ID
-			c.UserMap[u.ID] = u
 			return u, nil
 		}
 	}
@@ -407,9 +378,6 @@ type userInfoResponse struct {
 
 // GetUserByID searches for a user by iD
 func (c *Client) GetUserByID(userID string) (*slack.User, error) {
-	if user := c.UserMap[userID]; user != nil {
-		return user, nil
-	}
 	data, err := newAPIRequest(slack.UsersInfo).
 		addParam("user", userID).
 		addParam("include_local", "true").
@@ -425,30 +393,5 @@ func (c *Client) GetUserByID(userID string) (*slack.User, error) {
 	if !resp.OK {
 		return nil, errors.New(resp.Error)
 	}
-	c.UserMap[userID] = resp.User
 	return resp.User, nil
-}
-
-func (c *Client) UserReportTime(u *slack.User) (time.Time, error) {
-	if !c.HasUser(u) {
-		return time.Time{}, errors.New("missing user")
-	}
-	if c.Schedule.TimeZone == userTimeZone {
-		if c.Debug {
-			logrus.Info("using user timezone")
-		}
-		return c.Schedule.UserTimeZone(u)
-	}
-	if c.Debug {
-		logrus.Info("using report utc time")
-	}
-	return c.Schedule.TodayTime()
-}
-
-func (c *Client) PopulateUserReports() {
-	for _, report := range c.Config.Reports {
-		for _, user := range report.Users {
-			c.UserReports[user.Name] = append(c.UserReports[user.Name], report)
-		}
-	}
 }
