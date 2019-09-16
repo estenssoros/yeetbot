@@ -39,21 +39,8 @@ func (c Client) String() string {
 	return string(ju)
 }
 
-func (c *Client) applyMessageDefaults(msg *slack.Message) {
-	if msg.Username == "" {
-		msg.Username = defaultUsername
-	}
-	if msg.Icon == "" {
-		msg.Icon = defaultIcon
-	}
-	if msg.Channel == "" {
-		// msg.Channel = c.Channel
-	}
-}
-
 // SendMessage sends a slack message
 func (c *Client) SendMessage(msg *slack.Message) error {
-	// c.applyMessageDefaults(msg)
 	u := slackurl + "/" + slack.ChatPostMessage
 
 	if err := c.postRequest(u, msg); err != nil {
@@ -68,11 +55,7 @@ func (c *Client) postRequest(url string, v interface{}) error {
 
 	ju, _ := json.Marshal(v)
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(ju))
-
-	if err != nil {
-		return errors.Wrap(err, "http new request")
-	}
+	req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(ju))
 
 	req.Header.Set("Authorization", "Bearer "+c.BotToken)
 	req.Header.Set("Content-Type", "application/json;charset=iso-8859-1")
@@ -90,7 +73,6 @@ func (c *Client) postRequest(url string, v interface{}) error {
 	if resp.StatusCode != http.StatusOK {
 		return errors.Errorf("bad status code: %d, %s", resp.StatusCode, string(b))
 	}
-
 	slackresp := &slack.Response{}
 	if err := json.Unmarshal(b, slackresp); err != nil {
 		return errors.Wrap(err, "unmarshal slack resp")
@@ -215,28 +197,6 @@ func (c *Client) ListChannels() ([]*slack.Channel, error) {
 	return resp.Channels, nil
 }
 
-// ListConversations lists conversations
-func (c *Client) ListConversations() (interface{}, error) {
-	data, err := newAPIRequest(slack.ConversationsList).
-		addParam("token", c.BotToken).
-		Get()
-	if err != nil {
-		return nil, errors.Wrap(err, "slack api request")
-	}
-	fmt.Println(string(data))
-	return nil, errors.New("not implemented")
-}
-
-// GetLastMessageFromUser gets the last message from a users
-func (c *Client) GetLastMessageFromUser(user *slack.User) (*slack.Message, error) {
-	conversations, err := c.ListConversations()
-	if err != nil {
-		return nil, errors.Wrap(err, "client list conversations")
-	}
-	fmt.Println(conversations)
-	return nil, nil
-}
-
 type listMessagesResponse struct {
 	OK       bool                    `json:"ok"`
 	Error    string                  `json:"error"`
@@ -313,26 +273,6 @@ func (c *Client) ListDirectMessageChannels() ([]*slack.Channel, error) {
 type deleteMessageResponse struct {
 	OK    bool   `json:"ok"`
 	Error string `json:"error"`
-}
-
-// DeleteUserMessage delets a user message
-func (c *Client) DeleteUserMessage(channelID string, messageTS string) error {
-	data, err := newAPIRequest(slack.ChatDelete).
-		addParam("channel", channelID).
-		addParam("ts", messageTS).
-		addParam("token", c.UserToken).
-		Get()
-	if err != nil {
-		return errors.Wrap(err, "api request")
-	}
-	resp := &deleteMessageResponse{}
-	if err := json.Unmarshal(data, resp); err != nil {
-		return errors.Wrap(err, "unmarshal")
-	}
-	if !resp.OK {
-		return errors.New(resp.Error)
-	}
-	return nil
 }
 
 // DeleteBotMessage deletes a bot message
