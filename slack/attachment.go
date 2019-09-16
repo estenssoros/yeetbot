@@ -1,6 +1,7 @@
 package slack
 
 type Attachment struct {
+	Title          string    `json:"title,omitempty"`
 	Text           string    `json:"text,omitempty" yaml:"text,omitempty"`
 	Fallback       string    `json:"fallback,omitempty" yaml:"fallback,omitempty"`
 	CallbackID     string    `json:"callback_id,omitempty" yaml:"callback_id,omitempty"`
