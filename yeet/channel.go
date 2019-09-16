@@ -53,11 +53,6 @@ var channelPurgeCmd = &cobra.Command{
 				toDelete[message.Ts] = message.Text
 			}
 		}
-		for messageTS := range toDelete {
-			if err := c.DeleteUserMessage(args[0], messageTS); err == nil {
-				delete(toDelete, messageTS)
-			}
-		}
 		if len(toDelete) > 0 {
 			fmt.Println("failed to delete messages")
 		}
