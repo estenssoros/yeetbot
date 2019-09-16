@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/estenssoros/yeetbot/slack"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -19,13 +18,12 @@ var (
 
 // Config all info for a yeetbot config
 type Config struct {
-	UserToken string    `json:"user_token"`
-	BotToken  string    `json:"bot_token"`
-	YeetUser  string    `json::""yeet_userid`
-	Debug     bool      `json:"debug"`
-	Reports   []*Report `json:"reports"`
-
-	ElasticURL string `json:"elastic_url"`
+	Team      string     `json:"team" yaml:"team"`
+	UserToken string     `json:"userToken" yaml:"userToken"`
+	BotToken  string     `json:"botToken" yaml:"botToken"`
+	YeetUser  string     `json:"yeetUserID" yaml:"yeetUser"`
+	Debug     bool       `json:"debug" yaml:"debug"`
+	Meetings  []*Meeting `json:"meetings" yaml:"meetings"`
 }
 
 func (c Config) String() string {
@@ -34,17 +32,13 @@ func (c Config) String() string {
 }
 
 // NewClient creates a report client from a config
-func (c *Config) NewClient(report *Report) *Client {
+func (c *Config) NewClient() *Client {
 	client := &Client{
-		YeetUser:     c.YeetUser,
-		BotToken:     c.BotToken,
-		ElasticIndex: elasticIndex,
-		UserReports:  map[string][]*Report{},
-		UserMap:      map[string]*slack.User{},
-		Config:       c,
-		Report:       report,
+		UserToken: c.UserToken,
+		YeetUser:  c.YeetUser,
+		BotToken:  c.BotToken,
+		Config:    c,
 	}
-	client.PopulateUserReports()
 	return client
 }
 
