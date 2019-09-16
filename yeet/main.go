@@ -18,6 +18,7 @@ func init() {
 	rootCmd.AddCommand(messageCmd)
 	rootCmd.AddCommand(slackCmd)
 	rootCmd.AddCommand(elasticCmd)
+	rootCmd.AddCommand(meetingCmd)
 }
 
 var rootCmd = &cobra.Command{
