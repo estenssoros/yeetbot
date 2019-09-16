@@ -3,6 +3,7 @@ package client
 import (
 	"time"
 
+	"github.com/estenssoros/yeetbot/slack"
 	"github.com/gorhill/cronexpr"
 )
 
@@ -21,4 +22,12 @@ type Schedule struct {
 // NextReportDate figures out next report date
 func (s *Schedule) NextReportDate() time.Time {
 	return cronexpr.MustParse(s.Cron).Next(time.Now())
+}
+
+func (s *Schedule) UserReportDate(u *slack.User) time.Time {
+	t := s.NextReportDate()
+	if s.TimeZone == userTimeZone {
+		t = t.Add(time.Minute * time.Duration(u.TZOffset))
+	}
+	return t
 }

@@ -34,6 +34,10 @@ var (
                 "userID": {
                     "type": "text"
                 },
+                "scheduledStart": {
+                    "type": "date",
+                    "format": "dateOptionalTime"
+                },
                 "createdAt": {
                     "type": "date",
                     "format": "dateOptionalTime"
