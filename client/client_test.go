@@ -125,20 +125,6 @@ func TestClientSendMessage(t *testing.T) {
 	}
 }
 
-func TestClientPostRequest(t *testing.T) {
-	config, err := ConfigFromEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-	client := config.NewClient()
-	if err := client.postRequest("asdf", nil); err == nil {
-		t.Fatal("should have returned error")
-	}
-	if err := client.postRequest("http://google.com", "asdf"); err == nil {
-		t.Fatal("should be error")
-	}
-}
-
 func TestClientGenericMessage(t *testing.T) {
 	config, err := ConfigFromEnv()
 	if err != nil {
