@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/estenssoros/yeetbot/client"
+	"github.com/estenssoros/yeetbot/models"
 	"github.com/estenssoros/yeetbot/slack"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
@@ -73,7 +74,7 @@ func EventHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	event := &client.Event{
+	event := &models.Event{
 		Question: lastMessage.Text,
 		Response: req.Event.Text,
 		TS:       req.Event.EventTs,

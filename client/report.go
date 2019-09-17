@@ -2,60 +2,18 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/estenssoros/yeetbot/models"
 	"github.com/estenssoros/yeetbot/slack"
 	"github.com/olivere/elastic"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	"github.com/seaspancode/services/elasticsvc"
 )
 
-// Event records what happened
-type Event struct {
-	Question string `json:"question"`
-	Response string `json:"response"`
-	TS       string `json:"eventTS"`
-	Color    string `json:"color"`
-}
-
-// Report a yeetbot report
-type Report struct {
-	ID             uuid.UUID `json:"id"`
-	MeetingID      string    `json:"meetingID"`
-	UserID         string    `json:"userID"`
-	ScheduledStart time.Time `json:"scheduledStart"`
-	CreatedAt      time.Time `json:"createdAt"`
-	Events         []*Event  `json:"events"`
-	Done           bool      `json:"done"`
-}
-
-// EsType for elasticsvc
-func (r Report) EsType() string {
-	return `report`
-}
-
-func (r Report) String() string {
-	ju, _ := json.MarshalIndent(r, "", " ")
-	return string(ju)
-}
-
-// AddEvent adds an event to a report
-func (r *Report) AddEvent(event *Event) {
-	for _, e := range r.Events {
-		if e.Question == event.Question {
-			e.Response = event.Response
-			e.TS = event.TS
-			return
-		}
-	}
-	r.Events = append(r.Events, event)
-}
-
 // SaveReport saves a report to an elastic index
-func (c *Client) SaveReport(report *Report) error {
+func (c *Client) SaveReport(report *models.Report) error {
 	es := elasticsvc.New(context.Background())
 	if err := es.PutOne(c.reportIndex, report); err != nil {
 		return errors.Wrap(err, "put one")
@@ -82,19 +40,19 @@ func (c *Client) CompleteReport(user *slack.User) error {
 }
 
 // GetOrCreateUserReport gets a user report if it exists. Creates a new one if it doesn't exist
-func (c *Client) GetOrCreateUserReport(meeting *Meeting, user *slack.User) (*Report, error) {
+func (c *Client) GetOrCreateUserReport(meeting *models.Meeting, user *slack.User) (*models.Report, error) {
 	es := elasticsvc.New(context.Background())
 	q := elastic.NewBoolQuery()
 	{
 		q = q.Must(elastic.NewTermQuery("userID", user.ID))
 		q = q.Must(elastic.NewTermQuery("meetingID", meeting.ID))
 	}
-	reports := []*Report{}
+	reports := []*models.Report{}
 	if err := es.GetMany(c.reportIndex, q, &reports); err != nil {
 		return nil, err
 	}
 	if len(reports) == 0 {
-		return &Report{
+		return &models.Report{
 			MeetingID: meeting.ID,
 			UserID:    user.ID,
 			CreatedAt: time.Now(),
@@ -104,14 +62,14 @@ func (c *Client) GetOrCreateUserReport(meeting *Meeting, user *slack.User) (*Rep
 }
 
 // SubmitUserReport sends a user report to the meeting channel
-func (c *Client) SubmitUserReport(m *Meeting, u *slack.User) error {
+func (c *Client) SubmitUserReport(m *models.Meeting, u *slack.User) error {
 	es := elasticsvc.New(context.Background())
 	q := elastic.NewBoolQuery()
 	{
 		q = q.Must(elastic.NewTermQuery("meetingID", m.ID))
 		q = q.Must(elastic.NewTermQuery("userID", u.ID))
 	}
-	reports := []*Report{}
+	reports := []*models.Report{}
 	if err := es.GetMany(c.reportIndex, q, &reports); err != nil {
 		return errors.Wrap(err, "es get many")
 	}

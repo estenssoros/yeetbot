@@ -1,21 +1,13 @@
 package client
 
 import (
+	"github.com/estenssoros/yeetbot/models"
 	"github.com/estenssoros/yeetbot/slack"
 	"github.com/pkg/errors"
 )
 
-// Question a question to ask a user
-// Color is the attachment color
-// If options are given, the question will have a drop down
-type Question struct {
-	Text    string   `yaml:"text"`
-	Color   string   `yaml:"color"`
-	Options []string `yaml:"options,omitempty"`
-}
-
 // PostFirstQuestion sends the first question to the user
-func (c *Client) PostFirstQuestion(m *Meeting, u *slack.User) error {
+func (c *Client) PostFirstQuestion(m *models.Meeting, u *slack.User) error {
 	msg := &slack.Message{
 		Text:    m.Questions[0].Text,
 		Channel: "@" + u.Name,
@@ -25,7 +17,7 @@ func (c *Client) PostFirstQuestion(m *Meeting, u *slack.User) error {
 }
 
 // NextStage sends the next question to the user
-func (c *Client) NextStage(m *Meeting, q *Question, u *slack.User) error {
+func (c *Client) NextStage(m *models.Meeting, q *models.Question, u *slack.User) error {
 	var questionIdx int
 	for idx, question := range m.Questions {
 		if question.Text == q.Text {
@@ -41,7 +33,7 @@ func (c *Client) NextStage(m *Meeting, q *Question, u *slack.User) error {
 }
 
 // PostQuestion sends a question to a slack user
-func (c *Client) PostQuestion(q *Question, u *slack.User) error {
+func (c *Client) PostQuestion(q *models.Question, u *slack.User) error {
 	msg := &slack.Message{
 		Text:    q.Text,
 		Channel: "@" + u.Name,
@@ -51,14 +43,14 @@ func (c *Client) PostQuestion(q *Question, u *slack.User) error {
 }
 
 // GetLastYeetQuestion gets the last question asked by yeetbot
-func (c *Client) GetLastYeetQuestion(channelID string) (*Question, error) {
+func (c *Client) GetLastYeetQuestion(channelID string) (*models.Question, error) {
 	messages, err := c.ListMessages(channelID)
 	if err != nil {
 		return nil, err
 	}
 	for _, m := range messages {
 		if m.User == c.YeetUser {
-			return &Question{
+			return &models.Question{
 				Text: m.Text,
 			}, nil
 		}

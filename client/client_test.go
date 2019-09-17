@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/estenssoros/yeetbot/models"
 	"github.com/estenssoros/yeetbot/slack"
 )
 
@@ -155,24 +156,24 @@ func TestClientSendGreeting(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := config.NewClient()
-	meeting := &Meeting{
+	meeting := &models.Meeting{
 		IntroMessage: "{{.Name}} this is a test",
 	}
 	user := &slack.User{Name: "sebastian"}
 	if err := client.SendGreeting(meeting, user); err != nil {
 		t.Fatal(err)
 	}
-	meeting = &Meeting{IntroMessage: "{{.asdf}}"}
+	meeting = &models.Meeting{IntroMessage: "{{.asdf}}"}
 	if err := client.SendGreeting(meeting, user); err == nil {
 		t.Fatal("should error")
 	}
 	client.UserToken = ""
-	meeting = &Meeting{IntroMessage: ""}
+	meeting = &models.Meeting{IntroMessage: ""}
 	if err := client.SendGreeting(meeting, user); err == nil {
 		t.Fatal("should error")
 	}
 	client.BotToken = ""
-	meeting = &Meeting{IntroMessage: ""}
+	meeting = &models.Meeting{IntroMessage: ""}
 	if err := client.SendGreeting(meeting, user); err == nil {
 		t.Fatal("should error")
 	}

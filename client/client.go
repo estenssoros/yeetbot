@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/estenssoros/yeetbot/slack"
+	"github.com/estenssoros/yeetbot/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -100,7 +101,7 @@ func (c *Client) GenericMessage(u *slack.User, text string) error {
 }
 
 // SendGreeting crafts and sends the greeting message
-func (c *Client) SendGreeting(m *Meeting, user *slack.User) error {
+func (c *Client) SendGreeting(m *models.Meeting, user *slack.User) error {
 	if c.BotToken == "" {
 		return errors.New("missing bot token")
 	}

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/estenssoros/yeetbot/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -19,12 +20,12 @@ var (
 
 // Config all info for a yeetbot config
 type Config struct {
-	Team      string     `json:"team" yaml:"team"`
-	UserToken string     `json:"userToken" yaml:"userToken"`
-	BotToken  string     `json:"botToken" yaml:"botToken"`
-	YeetUser  string     `json:"yeetUserID" yaml:"yeetUser"`
-	Debug     bool       `json:"debug" yaml:"debug"`
-	Meetings  []*Meeting `json:"meetings" yaml:"meetings"`
+	Team      string            `json:"team" yaml:"team"`
+	UserToken string            `json:"userToken" yaml:"userToken"`
+	BotToken  string            `json:"botToken" yaml:"botToken"`
+	YeetUser  string            `json:"yeetUserID" yaml:"yeetUser"`
+	Debug     bool              `json:"debug" yaml:"debug"`
+	Meetings  []*models.Meeting `json:"meetings" yaml:"meetings"`
 }
 
 func (c Config) String() string {
