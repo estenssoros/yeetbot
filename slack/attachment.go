@@ -16,3 +16,4 @@ func (a *Attachment) AddAction(action *Action) {
 	}
 	a.Actions = append(a.Actions, action)
 }
+

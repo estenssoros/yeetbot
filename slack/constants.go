@@ -1,6 +1,8 @@
 package slack
 
 var (
+	slackurl = "https://slack.com/api"
+
 	ChatPostMessage     = "chat.postMessage"
 	UsersList           = "users.list"
 	ConversationsList   = "conversations.list"

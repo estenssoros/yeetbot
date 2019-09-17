@@ -2,6 +2,8 @@ package slack
 
 import (
 	"encoding/json"
+
+	"github.com/pkg/errors"
 )
 
 type Channel struct {
@@ -41,4 +43,27 @@ type Channel struct {
 func (c Channel) String() string {
 	ju, _ := json.MarshalIndent(c, "", " ")
 	return string(ju)
+}
+
+type listChannelResponse struct {
+	OK       bool       `json:"ok"`
+	Channels []*Channel `json:"channels"`
+	Error    string     `json:"error"`
+}
+
+func (a *API) ListChannels() ([]*Channel, error) {
+	data, err := newRequest(ChannelsList).
+		addParam("token", a.botToken).
+		Get()
+	if err != nil {
+		return nil, errors.Wrap(err, "slack api request")
+	}
+	resp := &listChannelResponse{}
+	if err := json.Unmarshal(data, resp); err != nil {
+		return nil, errors.Wrap(err, "unmarshal")
+	}
+	if !resp.OK {
+		return nil, errors.New(resp.Error)
+	}
+	return resp.Channels, nil
 }

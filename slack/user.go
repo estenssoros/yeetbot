@@ -78,3 +78,29 @@ func (u *User) Template(t string) (string, error) {
 	}
 	return b.String(), nil
 }
+
+type userInfoResponse struct {
+	OK    bool   `json:"ok"`
+	Error string `json:"error"`
+	User  *User  `json:"user"`
+}
+
+// GetUserByID searches for a user by iD
+func (a *API) GetUserByID(userID string) (*User, error) {
+	data, err := newRequest(UsersInfo).
+		addParam("user", userID).
+		addParam("include_local", "true").
+		addParam("token", a.botToken).
+		Get()
+	if err != nil {
+		return nil, errors.Wrap(err, "api request")
+	}
+	resp := &userInfoResponse{}
+	if err := json.Unmarshal(data, resp); err != nil {
+		return nil, errors.Wrap(err, "unmarshal")
+	}
+	if !resp.OK {
+		return nil, errors.New(resp.Error)
+	}
+	return resp.User, nil
+}

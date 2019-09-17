@@ -1,4 +1,4 @@
-package client
+package slack
 
 import (
 	"bytes"
@@ -19,7 +19,7 @@ type apiRequest struct {
 	headers map[string]string
 }
 
-func newAPIRequest(suffix string) *apiRequest {
+func newRequest(suffix string) *apiRequest {
 	return &apiRequest{
 		url:     "https://slack.com/api/",
 		suffix:  suffix,
@@ -44,6 +44,14 @@ func (r *apiRequest) addBody(v interface{}) *apiRequest {
 	return r
 }
 
+func (r *apiRequest) Get() ([]byte, error) {
+	return r.Do(http.MethodGet)
+}
+
+func (r *apiRequest) Post() ([]byte, error) {
+	return r.Do(http.MethodPost)
+}
+
 func (r *apiRequest) craftURL() (string, error) {
 	u, err := url.Parse(r.url + r.suffix)
 	if err != nil {
@@ -56,14 +64,6 @@ func (r *apiRequest) craftURL() (string, error) {
 	}
 	u.RawQuery = q.Encode()
 	return u.String(), nil
-}
-
-func (r *apiRequest) Get() ([]byte, error) {
-	return r.Do(http.MethodGet)
-}
-
-func (r *apiRequest) Post() ([]byte, error) {
-	return r.Do(http.MethodPost)
 }
 
 func (r *apiRequest) Do(method string) ([]byte, error) {
