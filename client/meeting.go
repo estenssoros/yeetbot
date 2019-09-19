@@ -1,13 +1,10 @@
 package client
 
 import (
-	"context"
-
 	"github.com/estenssoros/yeetbot/models"
 	"github.com/estenssoros/yeetbot/slack"
 	"github.com/olivere/elastic"
 	"github.com/pkg/errors"
-	"github.com/seaspancode/services/elasticsvc"
 )
 
 // CreateMeeting creates a meeting in elastic search
@@ -28,14 +25,13 @@ func (c *Client) CreateMeeting(m *models.Meeting) error {
 		m.SetID()
 	}
 
-	es := elasticsvc.New(context.Background())
-	if err := es.PutOne(c.meetingIndex, m); err != nil {
+	if err := c.elastic.PutOne(c.meetingIndex, m); err != nil {
 		return errors.Wrap(err, "put one")
 	}
 
 	// create first report instance for each user
 	reports := m.CreateReports()
-	if err := es.PutMany(c.reportIndex, &reports); err != nil {
+	if err := c.elastic.PutMany(c.reportIndex, &reports); err != nil {
 		return errors.Wrap(err, "put many reports")
 	}
 	return nil
@@ -64,13 +60,12 @@ func StartMeeting(m *models.Meeting) error {
 // GetActiveMeetingsForUser gets the active meetings for a user
 func (c *Client) GetActiveMeetingsForUser(user *slack.User) ([]*models.Meeting, error) {
 	meetings := []*models.Meeting{}
-	es := elasticsvc.New(context.Background())
 	q := elastic.NewBoolQuery()
 	{
 		q = q.Must(elastic.NewTermQuery("started", true))
 		q = q.Must(elastic.NewTermQuery("ended", false))
 	}
-	if err := es.GetMany(c.meetingIndex, q, &meetings); err != nil {
+	if err := c.elastic.GetMany(c.meetingIndex, q, &meetings); err != nil {
 		return nil, errors.Wrap(err, "es get all")
 	}
 	userMeetings := []*models.Meeting{}
@@ -88,13 +83,12 @@ func (c *Client) GetActiveMeetingsForUser(user *slack.User) ([]*models.Meeting, 
 // ListActiveMeetings list the active meetings from a team's config
 func (c *Client) ListActiveMeetings() ([]*models.Meeting, error) {
 	meetings := []*models.Meeting{}
-	es := elasticsvc.New(context.Background())
 	q := elastic.NewBoolQuery()
 	{
 		q = q.Must(elastic.NewTermQuery("started", true))
 		q = q.Must(elastic.NewTermQuery("ended", false))
 	}
-	if err := es.GetMany(c.meetingIndex, q, &meetings); err != nil {
+	if err := c.elastic.GetMany(c.meetingIndex, q, &meetings); err != nil {
 		return nil, errors.Wrap(err, "es get all")
 	}
 	return meetings, nil
@@ -103,12 +97,11 @@ func (c *Client) ListActiveMeetings() ([]*models.Meeting, error) {
 // ListPendingMeetings from a teams config
 func (c *Client) ListPendingMeetings() ([]*models.Meeting, error) {
 	meetings := []*models.Meeting{}
-	es := elasticsvc.New(context.Background())
 	q := elastic.NewBoolQuery()
 	{
 		q = q.Must(elastic.NewTermQuery("started", false))
 	}
-	if err := es.GetMany(c.meetingIndex, q, &meetings); err != nil {
+	if err := c.elastic.GetMany(c.meetingIndex, q, &meetings); err != nil {
 		return nil, errors.Wrap(err, "es get all")
 	}
 	return meetings, nil
@@ -117,8 +110,7 @@ func (c *Client) ListPendingMeetings() ([]*models.Meeting, error) {
 // ListAllMeetings list all meetings from a teams config
 func (c *Client) ListAllMeetings() ([]*models.Meeting, error) {
 	meetings := []*models.Meeting{}
-	es := elasticsvc.New(context.Background())
-	if _, err := es.GetAll(c.meetingIndex, &meetings); err != nil {
+	if _, err := c.elastic.GetAll(c.meetingIndex, &meetings); err != nil {
 		return nil, errors.Wrap(err, "es get all")
 	}
 	return meetings, nil

@@ -5,7 +5,9 @@ import (
 
 	"github.com/estenssoros/yeetbot/models"
 	"github.com/estenssoros/yeetbot/slack"
+	"github.com/olivere/elastic"
 	"github.com/pkg/errors"
+	"github.com/seaspancode/services/elasticsvc"
 )
 
 var (
@@ -19,6 +21,27 @@ func init() {
 	userIDMap = map[string]*string{}
 }
 
+// SlackInterface implements all slack operations
+type SlackInterface interface {
+	SendMessage(*slack.Message) error
+	ListUsers() ([]*slack.User, error)
+	ListChannels() ([]*slack.Channel, error)
+	ListMessages(string) ([]*slack.HistoryMessage, error)
+	ListTodayMessages(string) ([]*slack.HistoryMessage, error)
+	ListDirectMessageChannels() ([]*slack.Channel, error)
+	DeleteBotMessage(string, string) error
+	GetUserByID(string) (*slack.User, error)
+	SetVerbose(bool)
+}
+
+// ElasticInterface implements all elastic operations
+type ElasticInterface interface {
+	PutOne(string, interface{}) error
+	GetMany(string, elastic.Query, interface{}) error
+	PutMany(string, interface{}) error
+	GetAll(string, interface{}) (*elasticsvc.Result, error)
+}
+
 // Client the guy that does all the work
 type Client struct {
 	UserToken    string `json:"user_token"`
@@ -28,6 +51,8 @@ type Client struct {
 	meetingIndex string
 	reportIndex  string
 	*Config
+	slack   SlackInterface
+	elastic ElasticInterface
 }
 
 func (c Client) String() string {
@@ -37,7 +62,7 @@ func (c Client) String() string {
 
 // SendMessage sends a slack message
 func (c *Client) SendMessage(msg *slack.Message) error {
-	return errors.Wrap(slack.New(c.BotToken).SendMessage(msg), "slack send message")
+	return errors.Wrap(c.slack.SendMessage(msg), "slack send message")
 }
 
 // GenericMessage sends a generic message
@@ -104,32 +129,32 @@ func (c *Client) SendGreeting(m *models.Meeting, user *slack.User) error {
 
 // ListUsers list users in workspace
 func (c *Client) ListUsers() ([]*slack.User, error) {
-	return slack.New(c.BotToken).ListUsers()
+	return c.slack.ListUsers()
 }
 
 // ListChannels list channels in workspace
 func (c *Client) ListChannels() ([]*slack.Channel, error) {
-	return slack.New(c.BotToken).ListChannels()
+	return c.slack.ListChannels()
 }
 
 // ListMessages lists messages in channel
 func (c *Client) ListMessages(channelID string) ([]*slack.HistoryMessage, error) {
-	return slack.New(c.BotToken).ListMessages(channelID)
+	return c.slack.ListMessages(channelID)
 }
 
 // ListTodayMessages lists messages from today
 func (c *Client) ListTodayMessages(channelID string) ([]*slack.HistoryMessage, error) {
-	return slack.New(c.BotToken).ListTodayMessages(channelID)
+	return c.slack.ListTodayMessages(channelID)
 }
 
 // ListDirectMessageChannels lists direct message channels
 func (c *Client) ListDirectMessageChannels() ([]*slack.Channel, error) {
-	return slack.New(c.BotToken).ListDirectMessageChannels()
+	return c.slack.ListDirectMessageChannels()
 }
 
 // DeleteBotMessage deletes a bot message
 func (c *Client) DeleteBotMessage(channelID string, messageTS string) error {
-	return slack.New(c.BotToken).DeleteBotMessage(channelID, messageTS)
+	return c.slack.DeleteBotMessage(channelID, messageTS)
 }
 
 // GetUserByName lists slack users and then returns the user
@@ -149,6 +174,5 @@ func (c *Client) GetUserByName(userName string) (*slack.User, error) {
 
 // GetUserByID searches for a user by iD
 func (c *Client) GetUserByID(userID string) (*slack.User, error) {
-	return slack.New(c.BotToken).GetUserByID(userID)
+	return c.slack.GetUserByID(userID)
 }
- 
