@@ -60,10 +60,6 @@ func TestClientListUsers(t *testing.T) {
 	if len(users) == 0 {
 		t.Fatal("no users returned")
 	}
-	client.BotToken = ""
-	if _, err := client.ListUsers(); err == nil {
-		t.Fatal("should error")
-	}
 }
 
 func TestClientGetUser(t *testing.T) {
@@ -206,10 +202,6 @@ func TestClientListChannels(t *testing.T) {
 	if _, err := client.ListTodayMessages(""); err == nil {
 		t.Error("should error")
 	}
-	client.BotToken = ""
-	if _, err := client.ListChannels(); err == nil {
-		t.Error("should error")
-	}
 }
 
 func TestClientListDirectMessageChannels(t *testing.T) {
@@ -222,12 +214,8 @@ func TestClientListDirectMessageChannels(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
 	if len(channels) == 0 {
 		t.Error("no channels")
-	}
-
-	client.BotToken = ""
-	if _, err := client.ListDirectMessageChannels(); err == nil {
-		t.Error("should error")
 	}
 }
