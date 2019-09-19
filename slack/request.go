@@ -17,6 +17,11 @@ type apiRequest struct {
 	params  map[string]string
 	body    []byte
 	headers map[string]string
+	verbose bool
+}
+
+func (r *apiRequest) SetVerbose(v bool) {
+	r.verbose = v
 }
 
 func newRequest(suffix string) *apiRequest {
@@ -71,7 +76,9 @@ func (r *apiRequest) Do(method string) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "craft url")
 	}
-	logrus.Println(method, url)
+	if r.verbose {
+		logrus.Println(method, url)
+	}
 	var (
 		req *http.Request
 	)

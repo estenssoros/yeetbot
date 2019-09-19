@@ -87,7 +87,7 @@ type userInfoResponse struct {
 
 // GetUserByID searches for a user by iD
 func (a *API) GetUserByID(userID string) (*User, error) {
-	data, err := newRequest(UsersInfo).
+	data, err := a.newRequest(UsersInfo).
 		addParam("user", userID).
 		addParam("include_local", "true").
 		addParam("token", a.botToken).

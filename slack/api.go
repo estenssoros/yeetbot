@@ -12,6 +12,7 @@ import (
 
 type API struct {
 	botToken string
+	verbose  bool
 }
 
 func New(token string) *API {
@@ -20,9 +21,21 @@ func New(token string) *API {
 	}
 }
 
+func (a *API) SetVerbose(v bool) {
+	a.verbose = v
+}
+
+func (a *API) newRequest(suffix string) *apiRequest {
+	r := newRequest(suffix)
+	r.SetVerbose(a.verbose)
+	return r
+}
+
 func (a *API) SendMessage(msg *Message) error {
 	url := slackurl + "/" + ChatPostMessage
-	logrus.Infof("%s %s", http.MethodPost, url)
+	if a.verbose {
+		logrus.Infof("%s %s", http.MethodPost, url)
+	}
 	ju, _ := json.Marshal(msg)
 	req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(ju))
 	req.Header.Set("Authorization", "Bearer "+a.botToken)
@@ -62,7 +75,7 @@ type listUsersResponse struct {
 
 // ListUsers lists users in workspace
 func (a *API) ListUsers() ([]*User, error) {
-	data, err := newRequest(UsersList).
+	data, err := a.newRequest(UsersList).
 		addParam("token", a.botToken).
 		Get()
 	if err != nil {

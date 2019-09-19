@@ -52,7 +52,7 @@ type listMessagesResponse struct {
 }
 
 func (a *API) ListMessages(channelID string) ([]*HistoryMessage, error) {
-	data, err := newRequest(ConversationHistory).
+	data, err := a.newRequest(ConversationHistory).
 		addParam("token", a.botToken).
 		addParam("channel", channelID).
 		Get()
@@ -73,7 +73,7 @@ func (a *API) ListMessages(channelID string) ([]*HistoryMessage, error) {
 func (a *API) ListTodayMessages(channelID string) ([]*HistoryMessage, error) {
 	now := time.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	data, err := newRequest(ConversationHistory).
+	data, err := a.newRequest(ConversationHistory).
 		addParam("token", a.botToken).
 		addParam("channel", channelID).
 		addParam("oldest", fmt.Sprint(today.Unix())).
@@ -99,7 +99,7 @@ type listDirectMessageChannelsReponse struct {
 
 // ListDirectMessageChannels lists direct message channels
 func (a *API) ListDirectMessageChannels() ([]*Channel, error) {
-	data, err := newRequest(IMList).
+	data, err := a.newRequest(IMList).
 		addParam("token", a.botToken).
 		Get()
 	if err != nil {
@@ -115,8 +115,6 @@ func (a *API) ListDirectMessageChannels() ([]*Channel, error) {
 	return resp.Channels, nil
 }
 
-
-
 type deleteMessageResponse struct {
 	OK    bool   `json:"ok"`
 	Error string `json:"error"`
@@ -124,7 +122,7 @@ type deleteMessageResponse struct {
 
 // DeleteBotMessage deletes a bot message
 func (a *API) DeleteBotMessage(channelID string, messageTS string) error {
-	data, err := newRequest(ChatDelete).
+	data, err := a.newRequest(ChatDelete).
 		addParam("channel", channelID).
 		addParam("ts", messageTS).
 		addParam("token", a.botToken).

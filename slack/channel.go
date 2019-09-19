@@ -52,7 +52,7 @@ type listChannelResponse struct {
 }
 
 func (a *API) ListChannels() ([]*Channel, error) {
-	data, err := newRequest(ChannelsList).
+	data, err := a.newRequest(ChannelsList).
 		addParam("token", a.botToken).
 		Get()
 	if err != nil {
