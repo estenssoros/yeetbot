@@ -1,14 +1,16 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"os"
 
 	"github.com/estenssoros/yeetbot/models"
+	"github.com/estenssoros/yeetbot/slack"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"github.com/seaspancode/services/elasticsvc"
 	"gopkg.in/yaml.v2"
 )
 
@@ -35,6 +37,8 @@ func (c Config) String() string {
 
 // NewClient creates a report client from a config
 func (c *Config) NewClient() *Client {
+	s := slack.New(c.BotToken)
+	s.SetVerbose(c.Debug)
 	client := &Client{
 		UserToken:    c.UserToken,
 		YeetUser:     c.YeetUser,
@@ -42,6 +46,8 @@ func (c *Config) NewClient() *Client {
 		Config:       c,
 		reportIndex:  defaultReportIndex,
 		meetingIndex: defaultMeetingIndex,
+		slack:        s,
+		elastic:      elasticsvc.New(context.Background()),
 	}
 	return client
 }
@@ -70,6 +76,5 @@ func ConfigFromEnv() (*Config, error) {
 		return nil, errors.Wrap(err, "open file")
 	}
 	defer f.Close()
-	logrus.Infof("using config stored at: %s", path)
 	return ConfigFromReader(f)
 }
