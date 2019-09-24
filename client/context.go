@@ -23,3 +23,12 @@ func Middleware(next echo.HandlerFunc) echo.HandlerFunc {
 		return next(cc)
 	}
 }
+
+// NewEmptyClient new empty client
+func (c *Context) NewEmptyClient() *Client {
+	client := &Client{
+		YeetUser: c.Config.YeetUser,
+		Config:   c.Config,
+	}
+	return client
+}

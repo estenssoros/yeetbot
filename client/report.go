@@ -1,54 +1,21 @@
 package client
 
 import (
-	"encoding/json"
+	"fmt"
 	"time"
 
+	"github.com/estenssoros/yeetbot/models"
 	"github.com/estenssoros/yeetbot/slack"
+	"github.com/olivere/elastic"
 	"github.com/pkg/errors"
 )
 
-// Report a yeetbot report
-type Report struct {
-	Name         string      `json:"name"`
-	Channel      string      `json:"channel"`
-	Users        []*User     `json:"users"`
-	Schedule     *Schedule   `json:"schedule"`
-	IntroMessage string      `json:"intro_message"`
-	Questions    []*Question `json:"questions"`
-}
-
-func (r Report) String() string {
-	ju, _ := json.MarshalIndent(r, "", " ")
-	return string(ju)
-}
-
-// TodayTime return the schedule report time for today
-func (r *Report) TodayTime() (time.Time, error) {
-	return r.Schedule.TodayTime()
-}
-
-// FindUserReport selects closest previous report to current time
-func (c *Client) FindReportByUser(user *slack.User, userReports map[string][]*Report) (*Report, error) {
-	closestTime := struct {
-		index int
-		time  int64
-	}{}
-	now := time.Now().Unix()
-	if len(userReports[user.RealName]) == 0 {
-		return nil, errors.New("No reports found")
+// SaveReport saves a report to an elastic index
+func (c *Client) SaveReport(report *models.Report) error {
+	if err := c.elastic.PutOne(c.reportIndex, report); err != nil {
+		return errors.Wrap(err, "put one")
 	}
-	for i, report := range userReports[user.RealName] {
-		t, err := time.Parse("15:04", report.Schedule.Time)
-		if err != nil {
-			return nil, err
-		}
-		if t.Unix() < now && t.Unix() > closestTime.time {
-			closestTime.index = i
-			closestTime.time = t.Unix()
-		}
-	}
-	return userReports[user.RealName][closestTime.index], nil
+	return nil
 }
 
 // InitiateReport initiates a new report for a user
@@ -67,4 +34,60 @@ func (c *Client) IsReportComplete(user *slack.User) bool {
 func (c *Client) CompleteReport(user *slack.User) error {
 	// TODO this
 	return nil
+}
+
+// GetOrCreateUserReport gets a user report if it exists. Creates a new one if it doesn't exist
+func (c *Client) GetOrCreateUserReport(meeting *models.Meeting, user *slack.User) (*models.Report, error) {
+	q := elastic.NewBoolQuery()
+	{
+		q = q.Must(elastic.NewTermQuery("userID", user.ID))
+		q = q.Must(elastic.NewTermQuery("meetingID", meeting.ID))
+	}
+	reports := []*models.Report{}
+	if err := c.elastic.GetMany(c.reportIndex, q, &reports); err != nil {
+		return nil, err
+	}
+	if len(reports) == 0 {
+		return &models.Report{
+			MeetingID: meeting.ID,
+			UserID:    user.ID,
+			CreatedAt: time.Now(),
+		}, nil
+	}
+	return reports[0], nil
+}
+
+// SubmitUserReport sends a user report to the meeting channel
+func (c *Client) SubmitUserReport(m *models.Meeting, u *slack.User) error {
+	q := elastic.NewBoolQuery()
+	{
+		q = q.Must(elastic.NewTermQuery("meetingID", m.ID))
+		q = q.Must(elastic.NewTermQuery("userID", u.ID))
+	}
+	reports := []*models.Report{}
+	if err := c.elastic.GetMany(c.reportIndex, q, &reports); err != nil {
+		return errors.Wrap(err, "es get many")
+	}
+
+	if want, have := 1, len(reports); want != have {
+		return errors.Errorf("fetching reports: wanted %d, have %d", want, have)
+	}
+	report := reports[0]
+	attachments := []*slack.Attachment{}
+	for _, event := range report.Events {
+		attachments = append(attachments, &slack.Attachment{
+			Title: event.Question,
+			Text:  event.Response,
+		})
+	}
+	msg := &slack.Message{
+		Text:        fmt.Sprintf("*%s* posted an update for *Daily Standup*", u.Name),
+		Channel:     m.Channel,
+		Attachments: attachments,
+	}
+	if err := c.SendMessage(msg); err != nil {
+		return errors.Wrap(err, "send message")
+	}
+	report.Done = true
+	return errors.Wrap(c.elastic.PutOne(c.reportIndex, report), "put report")
 }

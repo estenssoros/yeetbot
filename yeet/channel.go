@@ -8,25 +8,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	channelCmd.AddCommand(channelListCmd)
-	channelCmd.AddCommand(channelPurgeCmd)
-}
-
-var channelCmd = &cobra.Command{
+var listChannelCmd = &cobra.Command{
 	Use:   "channel",
-	Short: "do channel stuff",
-}
-
-var channelListCmd = &cobra.Command{
-	Use:   "list",
 	Short: "list channels",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config, err := client.ConfigFromEnv()
 		if err != nil {
 			return errors.Wrap(err, "client config from env")
 		}
-		c := config.NewClient(config.Reports[0])
+		c := config.NewClient()
 		channels, err := c.ListChannels()
 		if err != nil {
 			return errors.Wrap(err, "client list channels")
@@ -52,7 +42,7 @@ var channelPurgeCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "client config from env")
 		}
-		c := config.NewClient(config.Reports[0])
+		c := config.NewClient()
 		messages, err := c.ListMessages(args[0])
 		if err != nil {
 			return errors.Wrap(err, "client list messages")
@@ -61,11 +51,6 @@ var channelPurgeCmd = &cobra.Command{
 		for _, message := range messages {
 			if err := c.DeleteBotMessage(args[0], message.Ts); err != nil {
 				toDelete[message.Ts] = message.Text
-			}
-		}
-		for messageTS := range toDelete {
-			if err := c.DeleteUserMessage(args[0], messageTS); err == nil {
-				delete(toDelete, messageTS)
 			}
 		}
 		if len(toDelete) > 0 {

@@ -3,60 +3,135 @@ package main
 import (
 	"context"
 	"os"
-	"time"
 
-	"github.com/estenssoros/yeetbot/client"
-	"github.com/olivere/elastic"
-	uuid "github.com/satori/go.uuid"
 	"github.com/seaspancode/services/elasticsvc"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 var (
 	elasticURL   = os.Getenv("ELASTIC_URL")
-	elasticIndex = "yeetbot"
+	reportIndex  = "yeetreport"
+	meetingIndex = "yeetmeet"
 	testIndex    = "yeetbot-test"
-	mapping      = `
+	indices      = []string{
+		reportIndex,
+		meetingIndex,
+	}
+	reportMapping = `
 {
     "settings": {
         "number_of_shards": 1,
         "number_of_replicas": 1
-    }, 
+    },
     "mappings": {
-        "response": {
+        "report": {
             "properties": {
-				        "team":           {"type": "text"},
-                "user_id":     		{"type": "text"},
-                "event_ts":     	{"type": "integer"},
-                "date":      			{"type": "date", "format": "dateOptionalTime"},
-                "question":   		{"type": "text"},
-                "text":  					{"type": "text"}
+                "meetingID": {
+                    "type": "text"
+                },
+                "userID": {
+                    "type": "text"
+                },
+                "scheduledStart": {
+                    "type": "date",
+                    "format": "dateOptionalTime"
+                },
+                "createdAt": {
+                    "type": "date",
+                    "format": "dateOptionalTime"
+                },
+                "events": {
+                    "type": "object",
+                    "properties": {
+                        "question": {
+                            "type": "text"
+                        },
+                        "response": {
+                            "type": "text"
+                        },
+                        "eventTS": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "done": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}
+	`
+	meetingMapping = `
+{
+    "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 1
+    },
+    "mappings": {
+        "meeting": {
+            "properties": {
+                "name": {
+                    "type": "text"
+                },
+                "channel": {
+                    "type": "text"
+                },
+                "team": {
+                    "type": "text"
+                },
+                "scheduledStart": {
+                    "type": "date",
+                    "format": "dateOptionalTime"
+                },
+                "users": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "text"
+                        },
+                        "id": {
+                            "type": "text"
+                        }
+                    }
+                },
+                "questions": {
+                    "type": "object",
+                    "properties": {
+                        "text": {
+                            "type": "text"
+                        },
+                        "color": {
+                            "type": "text"
+                        },
+                        "options": {
+                            "type": "text"
+                        }
+                    }
+                },
+                "started": {
+                    "type": "boolean"
+                },
+                "ended": {
+                    "type": "boolean"
+                }
             }
         }
     }
 }
 `
+	indexMap = map[string]string{
+		reportIndex:  reportMapping,
+		meetingIndex: meetingMapping,
+	}
 )
 
 func init() {
 	elasticCmd.AddCommand(elasticDeleteCmd)
 	elasticCmd.AddCommand(elasticCreateCmd)
 	elasticCmd.AddCommand(elasticDeleteCreateCmd)
-	elasticCmd.AddCommand(elasticSearchCmd)
-	elasticCmd.AddCommand(elasticPutCmd)
-
-	elasticCreateCmd.Flags().Bool("test", false, "Uses test index")
-	elasticDeleteCreateCmd.Flags().Bool("test", false, "Uses test index")
-	elasticSearchCmd.Flags().Bool("test", false, "Uses test index")
-	elasticPutCmd.Flags().Bool("test", false, "Uses test index")
-
-	elasticSearchCmd.Flags().StringP("name", "n", "berto", "User id to search or add")
-	elasticPutCmd.Flags().StringP("name", "n", "berto", "User id to search or add")
-	elasticPutCmd.Flags().StringP("report", "r", "daily_standup", "Report to add")
-	elasticPutCmd.Flags().StringP("message", "m", "good", "Message to add")
 }
 
 var elasticCmd = &cobra.Command{
@@ -70,7 +145,12 @@ var elasticDeleteCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		svc := elasticsvc.New(context.Background())
 		svc.SetURL(elasticURL)
-		return errors.Wrap(svc.DeleteIndex(elasticIndex), "delete index")
+		for _, index := range indices {
+			if err := svc.DeleteIndex(index); err != nil {
+				return errors.Wrap(err, index)
+			}
+		}
+		return nil
 	},
 }
 
@@ -80,8 +160,12 @@ var elasticCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		svc := elasticsvc.New(context.Background())
 		svc.SetURL(elasticURL)
-		index := getIndex(cmd)
-		return errors.Wrap(svc.CreateIndex(index, mapping), "create index")
+		for _, index := range indices {
+			if err := svc.CreateIndex(index, indexMap[index]); err != nil {
+				return errors.Wrap(err, index)
+			}
+		}
+		return nil
 	},
 }
 
@@ -91,66 +175,18 @@ var elasticDeleteCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		svc := elasticsvc.New(context.Background())
 		svc.SetURL(elasticURL)
-		index := getIndex(cmd)
-		if err := svc.DeleteIndex(index); err != nil {
-			return errors.Wrap(err, "delete index")
-		}
-		return errors.Wrap(svc.CreateIndex(index, mapping), "create index")
-	},
-}
 
-var elasticSearchCmd = &cobra.Command{
-	Use: "search",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		es := elasticsvc.New(context.Background())
-		es.SetURL(elasticURL)
-		name, _ := cmd.Flags().GetString("name")
-		query := elastic.NewPrefixQuery("user_id", name)
-		responses := []*client.Response{}
-		index := getIndex(cmd)
-		if err := es.GetMany(index, query, &responses); err != nil {
-			return err
+		for _, index := range indices {
+			if err := svc.DeleteIndex(index); err != nil {
+				return errors.Wrap(err, index)
+			}
 		}
-		logrus.Infof("results for %s: ", index)
-		for i := range responses {
-			logrus.Infof("%+v", responses[i])
+
+		for _, index := range indices {
+			if err := svc.CreateIndex(index, indexMap[index]); err != nil {
+				return errors.Wrap(err, index)
+			}
 		}
 		return nil
 	},
-}
-
-var elasticPutCmd = &cobra.Command{
-	Use: "put",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		es := elasticsvc.New(context.Background())
-		es.SetURL(elasticURL)
-
-		name, _ := cmd.Flags().GetString("name")
-		report, _ := cmd.Flags().GetString("report")
-		response, _ := cmd.Flags().GetString("message")
-		doc := &client.Response{
-			ID:       uuid.Must(uuid.NewV4()),
-			Report:   report,
-			Channel:  "daily-standup",
-			UserID:   name,
-			EventTS:  time.Now().Unix(),
-			Date:     time.Now(),
-			Question: "How do you feel?",
-			Text:     response,
-		}
-		index := getIndex(cmd)
-		if err := es.PutOne(index, doc); err != nil {
-			return errors.Wrap(err, "adding response")
-		}
-		logrus.Infof("added %s to %s", doc.ID, index)
-		return nil
-	},
-}
-
-func getIndex(cmd *cobra.Command) string {
-	useTest, _ := cmd.Flags().GetBool("test")
-	if useTest {
-		return testIndex
-	}
-	return elasticIndex
 }

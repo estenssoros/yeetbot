@@ -8,24 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	messageCmd.AddCommand(messageDeleteCmd)
-	messageCmd.AddCommand(messageListCmd)
-}
-
-var messageCmd = &cobra.Command{
-	Use: "message",
-}
-
-var messageDeleteCmd = &cobra.Command{
-	Use: "delete",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("not implemented")
-	},
-}
-
-var messageListCmd = &cobra.Command{
-	Use:   "list",
+var listMessageCmd = &cobra.Command{
+	Use:   "message",
 	Short: "list messages in a channel",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
@@ -38,7 +22,7 @@ var messageListCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "client config from env")
 		}
-		c := config.NewClient(config.Reports[0])
+		c := config.NewClient()
 		messages, err := c.ListMessages(args[0])
 		if err != nil {
 			return errors.Wrap(err, "client list messages")
